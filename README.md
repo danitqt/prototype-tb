@@ -32,11 +32,7 @@ Le parcours complet dure environ 15 minutes, ce qui correspond à une partie de 
 
 ## Démonstration en ligne
 
-Une fois GitHub Pages activé, le prototype est accessible ici :
-
-`https://VOTRE-PSEUDO.github.io/NOM-DU-DEPOT/`
-
-*(à compléter une fois la page publiée)*
+https://danitqt.github.io/prototype-tb/
 
 ## Fonctionnalités principales
 
