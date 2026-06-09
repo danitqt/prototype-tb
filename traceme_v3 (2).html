@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TraceMe — Comprendre tes traces numériques</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700;9..144,800;9..144,900&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cream: #FFF8EE; --cream-soft: #FFF2DC; --paper: #FFFFFF;
+    --ink: #1A1A2E; --ink-soft: #4A4A6A; --ink-muted: #8888A0;
+    --coral: #FF6B6B; --coral-soft: #FFE5E5;
+    --mint: #4ECDC4; --mint-soft: #D1F5F2;
+    --sun: #FFD93D; --sun-soft: #FFF4C7;
+    --lavender: #A78BFA; --lavender-soft: #EDE4FF;
+    --peach: #FFB088; --peach-soft: #FFE4D2;
+    --sage: #95D5B2; --sage-soft: #DBF1E1;
+    --border: #2D2D44;
+    --shadow-card: 0 4px 0 0 var(--border);
+    --shadow-card-hover: 0 6px 0 0 var(--border);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { background: var(--cream); color: var(--ink); font-family: 'Inter', system-ui, sans-serif; line-height: 1.6; overflow-x: hidden; }
+  body::before { content: ''; position: fixed; inset: 0; background-image: radial-gradient(circle at 10% 20%, var(--coral-soft) 0%, transparent 40%), radial-gradient(circle at 90% 80%, var(--mint-soft) 0%, transparent 40%); opacity: 0.5; pointer-events: none; z-index: 0; }
+  .display { font-family: 'Fraunces', serif; font-weight: 800; letter-spacing: -0.02em; }
+  .mono { font-family: 'JetBrains Mono', monospace; }
+  .screen { display: none; min-height: 100vh; position: relative; z-index: 1; }
+  .screen.active { display: block; }
+  .container { max-width: 1280px; margin: 0 auto; padding: 0 24px; }
+
+  #landing { min-height: 100vh; display: none; align-items: center; justify-content: center; padding: 40px 24px; }
+  #landing.active { display: flex; }
+  .landing-content { max-width: 900px; text-align: center; position: relative; }
+  .landing-tag { display: inline-block; font-family: 'JetBrains Mono', monospace; font-size: 12px; padding: 8px 16px; background: var(--ink); color: var(--cream); border-radius: 30px; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 32px; transform: rotate(-1deg); }
+  .landing h1 { font-family: 'Fraunces', serif; font-size: clamp(48px, 8vw, 96px); font-weight: 900; line-height: 0.95; letter-spacing: -0.04em; margin-bottom: 24px; }
+  .landing h1 em { font-style: italic; color: var(--coral); }
+  .landing > p.lead { font-size: 19px; color: var(--ink-soft); margin-bottom: 48px; max-width: 600px; margin-left: auto; margin-right: auto; }
+  .mode-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; max-width: 800px; margin: 0 auto; }
+  .mode-card { background: var(--paper); border: 2px solid var(--ink); border-radius: 24px; padding: 36px 28px; box-shadow: var(--shadow-card); cursor: pointer; transition: all 0.2s cubic-bezier(.2,.8,.2,1); text-align: left; }
+  .mode-card:hover { transform: translate(-2px, -2px); box-shadow: var(--shadow-card-hover); }
+  .mode-card .mode-icon { width: 64px; height: 64px; border-radius: 18px; margin-bottom: 20px; display: flex; align-items: center; justify-content: center; border: 2px solid var(--ink); }
+  .mode-card.student .mode-icon { background: var(--coral); }
+  .mode-card.teacher .mode-icon { background: var(--mint); }
+  .mode-card h2 { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 800; margin-bottom: 8px; }
+  .mode-card p { color: var(--ink-soft); font-size: 15px; margin-bottom: 20px; }
+  .mode-card .mode-meta { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink-muted); text-transform: uppercase; letter-spacing: 0.1em; }
+  .float-shape { position: absolute; pointer-events: none; }
+  .float-shape.s1 { top: 5%; left: 5%; animation: float1 8s ease-in-out infinite; }
+  .float-shape.s2 { top: 12%; right: 8%; animation: float2 10s ease-in-out infinite; }
+  .float-shape.s3 { bottom: 15%; left: 8%; animation: float1 9s ease-in-out infinite reverse; }
+  .float-shape.s4 { bottom: 10%; right: 5%; animation: float2 7s ease-in-out infinite reverse; }
+  @keyframes float1 { 0%,100% { transform: translateY(0) rotate(0); } 50% { transform: translateY(-20px) rotate(8deg); } }
+  @keyframes float2 { 0%,100% { transform: translateY(0) rotate(0); } 50% { transform: translateY(-15px) rotate(-10deg); } }
+
+  .btn { display: inline-flex; align-items: center; gap: 10px; padding: 16px 32px; font-family: 'Inter', sans-serif; font-size: 16px; font-weight: 600; text-decoration: none; border-radius: 14px; border: 2px solid var(--ink); cursor: pointer; transition: all 0.15s cubic-bezier(.2,.8,.2,1); background: var(--paper); color: var(--ink); box-shadow: var(--shadow-card); text-align: center; user-select: none; }
+  .btn:hover { transform: translate(-2px,-2px); box-shadow: var(--shadow-card-hover); }
+  .btn:active { transform: translate(2px,2px); box-shadow: 0 0 0 0 var(--border); }
+  .btn-primary { background: var(--coral); color: var(--paper); }
+  .btn-sun { background: var(--sun); color: var(--ink); }
+  .btn-mint { background: var(--mint); color: var(--paper); }
+  .btn-ghost { background: transparent; box-shadow: none; }
+  .btn-small { padding: 10px 18px; font-size: 13px; }
+
+  .avatar-create { background: var(--paper); border: 2px solid var(--ink); border-radius: 24px; padding: 40px; box-shadow: var(--shadow-card); max-width: 720px; margin: 40px auto; }
+  .avatar-create h2 { font-family: 'Fraunces', serif; font-size: 36px; font-weight: 800; margin-bottom: 8px; }
+  .avatar-create > p { color: var(--ink-soft); margin-bottom: 32px; }
+  .field { margin-bottom: 24px; }
+  .field label { display: block; font-weight: 600; margin-bottom: 12px; font-size: 15px; }
+  .field input { width: 100%; padding: 14px 18px; font-family: inherit; font-size: 16px; border: 2px solid var(--ink); border-radius: 12px; background: var(--cream-soft); color: var(--ink); }
+  .field input:focus { outline: none; background: var(--paper); }
+  .style-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .style-option { aspect-ratio: 1; border: 2px solid var(--ink); border-radius: 16px; background: var(--paper); cursor: pointer; transition: all 0.15s; display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative; }
+  .style-option:hover { transform: translateY(-2px); }
+  .style-option.selected { box-shadow: 0 0 0 4px var(--sun); }
+  .style-option svg { width: 70%; height: 70%; }
+
+  #game { padding-bottom: 60px; }
+  .game-header { position: sticky; top: 0; border-bottom: 2px solid var(--ink); z-index: 50; padding: 16px 0; backdrop-filter: blur(20px); background: rgba(255, 248, 238, 0.95); }
+  .game-header-inner { display: flex; align-items: center; gap: 24px; max-width: 1280px; margin: 0 auto; padding: 0 24px; }
+  .avatar-mini { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+  .avatar-mini-img { width: 44px; height: 44px; border-radius: 50%; border: 2px solid var(--ink); background: var(--sun); display: flex; align-items: center; justify-content: center; overflow: hidden; }
+  .avatar-mini-img svg { width: 80%; height: 80%; }
+  .avatar-mini-name { font-weight: 700; font-size: 14px; }
+  .avatar-mini-meta { font-size: 11px; color: var(--ink-muted); font-family: 'JetBrains Mono', monospace; text-transform: uppercase; }
+  .stats-bar { display: flex; gap: 14px; flex: 1; flex-wrap: wrap; }
+  .stat-jauge { flex: 1; min-width: 130px; }
+  .stat-jauge-label { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; font-size: 11px; font-weight: 600; }
+  .stat-jauge-label .num { font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+  .stat-jauge-bar { height: 8px; background: var(--paper); border: 1.5px solid var(--ink); border-radius: 6px; overflow: hidden; }
+  .stat-jauge-fill { height: 100%; transition: width 0.6s cubic-bezier(.2,.8,.2,1); }
+  .stat-jauge.privacy .stat-jauge-fill { background: var(--mint); }
+  .stat-jauge.reputation .stat-jauge-fill { background: var(--lavender); }
+  .stat-jauge.wellbeing .stat-jauge-fill { background: var(--sage); }
+  .stat-jauge.algo .stat-jauge-fill { background: var(--coral); }
+
+  .chapter-wrap { padding: 40px 0; }
+  .chapter-progress { display: flex; gap: 4px; margin-bottom: 24px; }
+  .progress-dot { flex: 1; height: 4px; background: var(--paper); border: 1.5px solid var(--ink); border-radius: 2px; }
+  .progress-dot.done { background: var(--coral); }
+  .progress-dot.active { background: var(--sun); }
+  .chapter-month { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--ink-muted); text-transform: uppercase; letter-spacing: 0.12em; margin-bottom: 12px; font-weight: 600; }
+  .game-grid { display: grid; grid-template-columns: 1fr 340px; gap: 32px; align-items: start; }
+  .chapter-card { background: var(--paper); border: 2px solid var(--ink); border-radius: 24px; overflow: hidden; box-shadow: var(--shadow-card); }
+  .chapter-body { padding: 32px; }
+  .chapter-title { font-family: 'Fraunces', serif; font-size: 32px; font-weight: 800; line-height: 1.1; margin-bottom: 12px; }
+  .chapter-text { color: var(--ink-soft); font-size: 16px; margin-bottom: 24px; }
+  .chapter-text strong { color: var(--ink); font-weight: 600; }
+  .dilemma-prompt { background: var(--sun-soft); border: 2px solid var(--ink); border-radius: 14px; padding: 16px 20px; margin-bottom: 24px; font-weight: 600; }
+  .dilemma-prompt::before { content: '⚡ '; margin-right: 4px; }
+  .choices { display: grid; gap: 12px; }
+  .choice { background: var(--paper); border: 2px solid var(--ink); border-radius: 14px; padding: 18px 20px; cursor: pointer; transition: all 0.15s; text-align: left; font-family: inherit; color: var(--ink); font-size: 15px; line-height: 1.5; box-shadow: var(--shadow-card); display: flex; align-items: flex-start; gap: 14px; }
+  .choice:hover:not(:disabled) { transform: translate(-2px,-2px); box-shadow: var(--shadow-card-hover); }
+  .choice:disabled { cursor: not-allowed; opacity: 0.6; }
+  .choice.picked { background: var(--mint-soft); border-color: var(--ink); }
+  .choice-letter { flex-shrink: 0; width: 28px; height: 28px; border-radius: 8px; background: var(--cream-soft); border: 1.5px solid var(--ink); display: flex; align-items: center; justify-content: center; font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 700; }
+  .choice.picked .choice-letter { background: var(--mint); color: var(--paper); }
+  .consequence { background: var(--cream-soft); border: 2px solid var(--ink); border-radius: 14px; padding: 20px 24px; margin-top: 24px; display: none; }
+  .consequence.show { display: block; animation: slideIn 0.4s cubic-bezier(.2,.8,.2,1); }
+  @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  .consequence-tag { font-family: 'JetBrains Mono', monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--coral); font-weight: 700; margin-bottom: 8px; }
+  .consequence-text { font-size: 15px; line-height: 1.6; margin-bottom: 16px; }
+  .consequence-text strong { font-weight: 600; }
+  .consequence-traces { background: var(--paper); border: 1.5px solid var(--ink); border-radius: 10px; padding: 14px 16px; margin-bottom: 16px; }
+  .consequence-traces-title { font-family: 'JetBrains Mono', monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--ink-muted); margin-bottom: 8px; font-weight: 600; }
+  .consequence-traces ul { list-style: none; margin: 0; padding: 0; }
+  .consequence-traces li { font-size: 13px; padding: 4px 0; color: var(--ink-soft); display: flex; align-items: flex-start; gap: 8px; }
+  .consequence-traces li::before { content: '→'; color: var(--coral); font-weight: 700; }
+  .impacts { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+  .impact-pill { font-family: 'JetBrains Mono', monospace; font-size: 11px; padding: 4px 10px; border-radius: 20px; font-weight: 600; border: 1.5px solid var(--ink); }
+  .impact-pill.up { background: var(--sage-soft); }
+  .impact-pill.down { background: var(--coral-soft); }
+  .next-btn-wrap { text-align: center; margin-top: 16px; }
+
+  .phone-wrap { position: sticky; top: 130px; display: flex; flex-direction: column; align-items: center; gap: 16px; }
+  .phone-label { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink-muted); text-transform: uppercase; letter-spacing: 0.08em; text-align: center; min-height: 28px; transition: all 0.3s; }
+  .phone { width: 280px; height: 580px; background: var(--ink); border-radius: 38px; padding: 12px; box-shadow: 0 8px 0 0 #000, 0 12px 30px rgba(0,0,0,0.2); position: relative; }
+  .phone::before { content: ''; position: absolute; top: 18px; left: 50%; transform: translateX(-50%); width: 100px; height: 22px; background: var(--ink); border-radius: 0 0 14px 14px; z-index: 10; }
+  .phone-screen { width: 100%; height: 100%; background: #fff; border-radius: 28px; overflow: hidden; position: relative; }
+  .phone-status-bar { height: 30px; display: flex; justify-content: space-between; align-items: center; padding: 0 22px; font-size: 11px; font-weight: 600; color: var(--ink); }
+  .phone-status-bar .time { font-family: 'JetBrains Mono', monospace; }
+  .phone-status-bar .icons { display: flex; gap: 4px; font-size: 10px; align-items: center; }
+  .phone-status-bar .battery { width: 22px; height: 10px; border: 1px solid var(--ink); border-radius: 2px; position: relative; }
+  .phone-status-bar .battery::after { content: ''; position: absolute; right: -3px; top: 2px; width: 2px; height: 4px; background: var(--ink); border-radius: 0 1px 1px 0; }
+  .phone-status-bar .battery::before { content: ''; position: absolute; left: 1px; top: 1px; width: 70%; height: calc(100% - 2px); background: var(--ink); border-radius: 1px; }
+  .phone-content { height: calc(100% - 30px); overflow: hidden; position: relative; }
+  .phone-content.flash { animation: phoneFlash 0.5s; }
+  @keyframes phoneFlash { 0% { opacity: 0.3; transform: scale(0.97); } 100% { opacity: 1; transform: scale(1); } }
+  /* Instagram */
+  .ig-app { background: #fff; height: 100%; display: flex; flex-direction: column; }
+  .ig-topbar { height: 42px; display: flex; align-items: center; justify-content: space-between; padding: 0 14px; border-bottom: 1px solid #efefef; }
+  .ig-logo { font-family: 'Fraunces', serif; font-size: 19px; font-weight: 800; font-style: italic; }
+  .ig-topbar .ig-icons { display: flex; gap: 12px; font-size: 16px; }
+  .ig-profile-section { padding: 16px; display: flex; align-items: center; gap: 18px; border-bottom: 1px solid #efefef; }
+  .ig-avatar { width: 66px; height: 66px; border-radius: 50%; border: 2px solid #efefef; overflow: hidden; flex-shrink: 0; background: linear-gradient(45deg, #FED7AA, #FDA4AF); }
+  .ig-avatar svg { width: 100%; height: 100%; }
+  .ig-stats { display: flex; gap: 10px; flex: 1; justify-content: space-around; }
+  .ig-stat { text-align: center; }
+  .ig-stat-num { font-size: 14px; font-weight: 700; }
+  .ig-stat-label { font-size: 10px; color: #737373; }
+  .ig-profile-info { padding: 0 16px 14px; border-bottom: 1px solid #efefef; }
+  .ig-name { font-size: 13px; font-weight: 700; margin-bottom: 2px; }
+  .ig-username { font-size: 12px; color: #737373; }
+  .ig-privacy-badge { display: inline-flex; align-items: center; gap: 4px; margin-top: 6px; font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: 600; }
+  .ig-privacy-badge.public { background: #FFE5E5; color: #C00000; }
+  .ig-privacy-badge.private { background: #DBF1E1; color: #2D6738; }
+  .ig-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; padding: 2px; flex: 1; overflow: auto; }
+  .ig-post { aspect-ratio: 1; background: #fafafa; }
+  .ig-post.p1 { background: linear-gradient(135deg, #A78BFA, #FF6B6B); }
+  .ig-post.p2 { background: linear-gradient(135deg, #4ECDC4, #FFD93D); }
+  .ig-post.p3 { background: linear-gradient(135deg, #FFD93D, #FFB088); }
+  .ig-post.p4 { background: linear-gradient(135deg, #95D5B2, #4ECDC4); }
+  .ig-post.p5 { background: linear-gradient(135deg, #FF6B6B, #FFB088); }
+  .ig-post.p6 { background: linear-gradient(135deg, #A78BFA, #4ECDC4); }
+
+  /* WhatsApp */
+  .wa-app { background: #efeae2; height: 100%; display: flex; flex-direction: column; }
+  .wa-topbar { background: #128C7E; color: #fff; height: 50px; display: flex; align-items: center; padding: 0 14px; gap: 10px; }
+  .wa-back { font-size: 18px; }
+  .wa-avatar-group { width: 32px; height: 32px; border-radius: 50%; background: #fff; display: flex; align-items: center; justify-content: center; color: #128C7E; font-size: 14px; flex-shrink: 0; }
+  .wa-title { flex: 1; }
+  .wa-title-name { font-size: 13px; font-weight: 600; }
+  .wa-title-sub { font-size: 10px; opacity: 0.85; }
+  .wa-messages { flex: 1; padding: 14px 10px; overflow-y: auto; }
+  .wa-message { max-width: 82%; padding: 6px 10px 8px; border-radius: 8px; margin-bottom: 6px; font-size: 12px; line-height: 1.4; position: relative; box-shadow: 0 1px 0.5px rgba(0,0,0,0.13); opacity: 0; transform: translateY(10px); animation: slideMsg 0.4s ease-out forwards; }
+  @keyframes slideMsg { to { opacity: 1; transform: translateY(0); } }
+  .wa-message.from-them { background: #fff; color: #111; border-top-left-radius: 0; margin-right: auto; }
+  .wa-message.from-you { background: #d9fdd3; color: #111; border-top-right-radius: 0; margin-left: auto; }
+  .wa-author { font-size: 10px; font-weight: 700; color: #06CF9C; margin-bottom: 2px; }
+  .wa-time { font-size: 9px; color: #999; text-align: right; margin-top: 2px; }
+  .wa-message.toxic { color: #C00000; }
+  .blurred-photo { position: relative; width: 130px; height: 150px; border-radius: 8px; overflow: hidden; margin-bottom: 4px; border: 1px solid rgba(0,0,0,0.1); }
+  .blurred-photo .blur-img { position: absolute; inset: 0; background: linear-gradient(135deg, #c9a98f 0%, #e8c5a5 25%, #d4b5c0 50%, #b89a9a 75%, #a88a7a 100%); filter: blur(14px); transform: scale(1.3); }
+  .blurred-photo .blur-lock { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 32px; background: rgba(0,0,0,0.25); }
+
+  /* TikTok */
+  .tt-app { background: #000; height: 100%; position: relative; overflow: hidden; }
+  .tt-video { position: absolute; inset: 0; background: linear-gradient(180deg, #FF6B6B 0%, #C13584 50%, #1A1A2E 100%); display: flex; align-items: center; justify-content: center; }
+  .tt-video-content { color: #fff; text-align: center; font-family: 'Fraunces', serif; font-style: italic; font-size: 20px; font-weight: 600; padding: 0 30px; text-shadow: 0 2px 8px rgba(0,0,0,0.5); }
+  .tt-overlay { position: absolute; bottom: 70px; left: 14px; right: 60px; color: #fff; z-index: 5; }
+  .tt-username { font-size: 13px; font-weight: 700; margin-bottom: 4px; }
+  .tt-caption { font-size: 12px; opacity: 0.95; }
+  .tt-views { position: absolute; top: 50px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.6); color: #fff; padding: 6px 14px; border-radius: 16px; font-size: 13px; font-weight: 700; z-index: 6; backdrop-filter: blur(10px); }
+  .tt-actions { position: absolute; right: 12px; bottom: 80px; display: flex; flex-direction: column; gap: 16px; align-items: center; z-index: 5; }
+  .tt-action { display: flex; flex-direction: column; align-items: center; gap: 2px; color: #fff; }
+  .tt-action-icon { width: 38px; height: 38px; background: rgba(255,255,255,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+  .tt-action-num { font-size: 10px; font-weight: 600; }
+  .tt-comments { position: absolute; bottom: 20px; left: 0; right: 0; background: rgba(0,0,0,0.85); padding: 10px 14px; color: #fff; z-index: 4; max-height: 110px; overflow: hidden; }
+  .tt-comment { font-size: 11px; margin-bottom: 4px; opacity: 0; animation: fadeInComment 0.5s forwards; }
+  .tt-comment.mean { color: #FF6B6B; }
+  @keyframes fadeInComment { to { opacity: 1; } }
+
+  /* Snapchat */
+  .snap-app { background: #FFFC00; height: 100%; position: relative; display: flex; flex-direction: column; }
+  .snap-topbar { height: 50px; display: flex; align-items: center; padding: 0 14px; gap: 10px; background: #FFFC00; border-bottom: 1px solid rgba(0,0,0,0.1); }
+  .snap-logo { width: 30px; height: 30px; background: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+  .snap-title { font-size: 14px; font-weight: 700; flex: 1; }
+  .snap-map { flex: 1; background: #B5D99C; background-image: linear-gradient(45deg, rgba(255,255,255,0.2) 25%, transparent 25%, transparent 50%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0.2) 75%, transparent 75%); background-size: 20px 20px; position: relative; }
+  .snap-pin { position: absolute; width: 26px; height: 26px; background: #fff; border-radius: 50%; border: 3px solid #FFFC00; display: flex; align-items: center; justify-content: center; font-size: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.3); animation: pulse 2s ease-in-out infinite; }
+  @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.15); } }
+  .snap-pin.me { background: #FF6B6B; color: #fff; }
+  .snap-pin.friend { background: #A78BFA; }
+
+  /* Google */
+  .ggl-app { background: #fff; height: 100%; }
+  .ggl-search-bar { padding: 14px; border-bottom: 1px solid #efefef; }
+  .ggl-logo { font-family: 'Fraunces', serif; font-weight: 800; font-size: 18px; text-align: center; margin-bottom: 10px; }
+  .ggl-logo .b { color: #4285F4; } .ggl-logo .o1 { color: #EA4335; } .ggl-logo .o2 { color: #FBBC05; } .ggl-logo .g { color: #34A853; } .ggl-logo .l { color: #EA4335; } .ggl-logo .e { color: #4285F4; }
+  .ggl-search-input { background: #f1f3f4; border-radius: 24px; padding: 8px 14px; font-size: 12px; color: #333; font-family: 'JetBrains Mono', monospace; display: flex; align-items: center; gap: 8px; }
+  .ggl-results { padding: 12px; }
+  .ggl-result { margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px solid #f5f5f5; opacity: 0; animation: slideIn 0.4s forwards; }
+  .ggl-result-url { font-size: 10px; color: #5f6368; }
+  .ggl-result-title { font-size: 13px; color: #1a0dab; font-weight: 500; margin: 2px 0; }
+  .ggl-result-snippet { font-size: 11px; color: #4d5156; }
+
+  /* Settings */
+  .set-app { background: #f2f2f7; height: 100%; padding: 16px 12px; overflow-y: auto; }
+  .set-title { font-size: 20px; font-weight: 700; margin-bottom: 16px; }
+  .set-section { background: #fff; border-radius: 12px; overflow: hidden; margin-bottom: 14px; }
+  .set-row { display: flex; align-items: center; padding: 11px 14px; border-bottom: 1px solid #f0f0f0; gap: 12px; }
+  .set-row:last-child { border-bottom: none; }
+  .set-icon { width: 28px; height: 28px; border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: 13px; color: #fff; flex-shrink: 0; }
+  .set-icon.loc { background: #007AFF; } .set-icon.cam { background: #34C759; } .set-icon.mic { background: #FF9500; } .set-icon.contacts { background: #5856D6; } .set-icon.photos { background: #FF2D55; }
+  .set-row-label { flex: 1; font-size: 12px; }
+  .set-toggle { width: 42px; height: 25px; background: #e9e9eb; border-radius: 13px; position: relative; transition: background 0.3s; flex-shrink: 0; }
+  .set-toggle.on { background: #34C759; }
+  .set-toggle::after { content: ''; position: absolute; top: 2px; left: 2px; width: 21px; height: 21px; background: #fff; border-radius: 50%; transition: left 0.3s; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+  .set-toggle.on::after { left: 19px; }
+  .discord-app { background: #36393f; color: #fff; height: 100%; padding: 14px; }
+
+  /* Reveal screen */
+  .reveal-screen { padding: 60px 0; }
+  .reveal-header { text-align: center; margin-bottom: 48px; }
+  .reveal-header h1 { font-family: 'Fraunces', serif; font-size: clamp(40px, 6vw, 64px); font-weight: 800; line-height: 1; margin-bottom: 16px; }
+  .reveal-header p { color: var(--ink-soft); font-size: 18px; max-width: 540px; margin: 0 auto; }
+  .google-mock { background: var(--paper); border: 2px solid var(--ink); border-radius: 24px; overflow: hidden; box-shadow: var(--shadow-card); margin-bottom: 40px; }
+  .google-bar { background: var(--cream-soft); padding: 20px 24px; border-bottom: 2px solid var(--ink); display: flex; align-items: center; gap: 12px; }
+  .google-logo { font-family: 'Fraunces', serif; font-weight: 800; font-size: 22px; }
+  .google-logo .b { color: #4285F4; } .google-logo .o1 { color: #EA4335; } .google-logo .o2 { color: #FBBC05; } .google-logo .g { color: #34A853; } .google-logo .l { color: #EA4335; } .google-logo .e { color: #4285F4; }
+  .google-search-box { flex: 1; background: var(--paper); border: 1.5px solid var(--ink); border-radius: 30px; padding: 10px 18px; font-family: 'JetBrains Mono', monospace; font-size: 14px; display: flex; align-items: center; gap: 10px; }
+  .google-results { padding: 24px; }
+  .search-tip { font-size: 13px; color: var(--ink-muted); margin-bottom: 20px; }
+  .search-result { margin-bottom: 24px; padding-bottom: 24px; border-bottom: 1px solid var(--cream-soft); }
+  .search-result:last-child { border-bottom: none; }
+  .search-result-url { font-size: 13px; color: var(--ink-muted); margin-bottom: 4px; }
+  .search-result-title { font-family: 'Fraunces', serif; font-size: 19px; font-weight: 600; color: #1A0DAB; margin-bottom: 4px; cursor: pointer; }
+  .search-result-snippet { font-size: 14px; color: var(--ink-soft); line-height: 1.5; }
+  .search-result-snippet em { font-style: normal; font-weight: 600; background: var(--sun-soft); padding: 0 2px; }
+  .recruiter-card { background: var(--lavender-soft); border: 2px solid var(--ink); border-radius: 24px; padding: 40px; box-shadow: var(--shadow-card); margin-bottom: 32px; }
+  .recruiter-card h3 { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 800; margin-bottom: 16px; }
+  .recruiter-card .from { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--ink-muted); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 16px; }
+  .recruiter-card p { font-size: 16px; margin-bottom: 16px; color: var(--ink); }
+  .recruiter-card .signature { font-style: italic; color: var(--ink-soft); margin-top: 24px; }
+  .final-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 40px; }
+  .final-stat { background: var(--paper); border: 2px solid var(--ink); border-radius: 16px; padding: 20px; box-shadow: var(--shadow-card); text-align: center; }
+  .final-stat-icon { font-size: 32px; margin-bottom: 8px; }
+  .final-stat-value { font-family: 'Fraunces', serif; font-weight: 800; font-size: 32px; line-height: 1; }
+  .final-stat-label { font-size: 12px; color: var(--ink-soft); margin-top: 6px; font-weight: 500; }
+  .mirror-prompt { background: var(--ink); color: var(--cream); border: 2px solid var(--ink); border-radius: 24px; padding: 48px; text-align: center; box-shadow: var(--shadow-card); }
+  .mirror-prompt h2 { font-family: 'Fraunces', serif; font-size: clamp(28px, 4vw, 40px); font-weight: 700; line-height: 1.1; margin-bottom: 16px; }
+  .mirror-prompt h2 em { color: var(--sun); font-style: italic; }
+  .mirror-prompt p { font-size: 17px; opacity: 0.85; max-width: 500px; margin: 0 auto 28px; }
+
+  /* Teacher */
+  #teacher { padding: 40px 0; }
+  .teacher-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; flex-wrap: wrap; gap: 16px; }
+  .teacher-header h1 { font-family: 'Fraunces', serif; font-size: 40px; font-weight: 800; line-height: 1; }
+  .teacher-header .meta { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--ink-muted); text-transform: uppercase; letter-spacing: 0.1em; }
+  .dashboard-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 32px; }
+  .kpi-card { background: var(--paper); border: 2px solid var(--ink); border-radius: 18px; padding: 22px; box-shadow: var(--shadow-card); }
+  .kpi-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--ink-muted); margin-bottom: 8px; }
+  .kpi-value { font-family: 'Fraunces', serif; font-weight: 800; font-size: 36px; line-height: 1; }
+  .kpi-sub { font-size: 12px; color: var(--ink-soft); margin-top: 6px; }
+  .kpi-card.coral .kpi-value { color: var(--coral); }
+  .kpi-card.mint .kpi-value { color: #2C8F86; }
+  .kpi-card.sun .kpi-value { color: #A88A00; }
+  .kpi-card.lavender .kpi-value { color: var(--lavender); }
+  .panels-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 32px; }
+  .panel { background: var(--paper); border: 2px solid var(--ink); border-radius: 18px; padding: 28px; box-shadow: var(--shadow-card); }
+  .panel h3 { font-family: 'Fraunces', serif; font-size: 22px; font-weight: 700; margin-bottom: 6px; }
+  .panel .panel-sub { color: var(--ink-soft); font-size: 13px; margin-bottom: 20px; }
+  .bar-row { margin-bottom: 14px; }
+  .bar-label { display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 4px; font-weight: 500; }
+  .bar-label .pct { font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 700; }
+  .bar-track { height: 12px; background: var(--cream-soft); border: 1.5px solid var(--ink); border-radius: 6px; overflow: hidden; }
+  .bar-fill { height: 100%; transition: width 0.6s cubic-bezier(.2,.8,.2,1); }
+  .bar-fill.privacy { background: var(--mint); } .bar-fill.reputation { background: var(--lavender); } .bar-fill.wellbeing { background: var(--sage); } .bar-fill.algo { background: var(--coral); }
+  .insight-card { background: var(--sun-soft); border: 2px solid var(--ink); border-radius: 18px; padding: 24px 28px; margin-bottom: 16px; }
+  .insight-tag { font-family: 'JetBrains Mono', monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: #A88A00; font-weight: 700; margin-bottom: 8px; }
+  .insight-title { font-weight: 700; margin-bottom: 6px; font-size: 16px; }
+  .insight-body { font-size: 14px; color: var(--ink-soft); }
+  .insight-body strong { color: var(--ink); }
+  .student-list { background: var(--paper); border: 2px solid var(--ink); border-radius: 18px; padding: 28px; box-shadow: var(--shadow-card); }
+  .student-list h3 { font-family: 'Fraunces', serif; font-size: 22px; font-weight: 700; margin-bottom: 6px; }
+  .student-list .panel-sub { color: var(--ink-soft); font-size: 13px; margin-bottom: 20px; }
+  .student-row { display: grid; grid-template-columns: 36px 1fr repeat(4, 60px); gap: 12px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--cream-soft); }
+  .student-row:last-child { border-bottom: none; }
+  .student-row.header { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--ink-muted); text-transform: uppercase; letter-spacing: 0.08em; border-bottom: 2px solid var(--ink); padding-bottom: 8px; }
+  .student-pseudo { font-weight: 600; font-size: 14px; }
+  .student-score { text-align: center; font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 700; padding: 4px 6px; border-radius: 6px; }
+  .score-high { background: var(--sage-soft); color: #2D6738; }
+  .score-mid { background: var(--sun-soft); color: #A88A00; }
+  .score-low { background: var(--coral-soft); color: #A82828; }
+
+  @media (max-width: 980px) { .game-grid { grid-template-columns: 1fr; } .phone-wrap { position: static; margin: 0 auto; } }
+  @media (max-width: 768px) { .mode-grid { grid-template-columns: 1fr; } .game-header-inner { flex-wrap: wrap; } .stats-bar { width: 100%; } .style-grid { grid-template-columns: repeat(2, 1fr); } .final-stats, .dashboard-grid { grid-template-columns: repeat(2, 1fr); } .panels-grid { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<div id="landing" class="screen active">
+  <svg class="float-shape s1" width="80" height="80" viewBox="0 0 80 80"><circle cx="40" cy="40" r="35" fill="#FFD93D" stroke="#1A1A2E" stroke-width="2"/><circle cx="30" cy="35" r="3" fill="#1A1A2E"/><circle cx="50" cy="35" r="3" fill="#1A1A2E"/><path d="M28 50 Q40 58 52 50" stroke="#1A1A2E" stroke-width="3" fill="none" stroke-linecap="round"/></svg>
+  <svg class="float-shape s2" width="60" height="60" viewBox="0 0 60 60"><rect x="10" y="10" width="40" height="40" rx="10" fill="#FF6B6B" stroke="#1A1A2E" stroke-width="2" transform="rotate(15 30 30)"/></svg>
+  <svg class="float-shape s3" width="70" height="70" viewBox="0 0 70 70"><path d="M35 5 L43 25 L65 28 L48 43 L52 65 L35 53 L18 65 L22 43 L5 28 L27 25 Z" fill="#4ECDC4" stroke="#1A1A2E" stroke-width="2"/></svg>
+  <svg class="float-shape s4" width="65" height="65" viewBox="0 0 65 65"><circle cx="32" cy="32" r="28" fill="#A78BFA" stroke="#1A1A2E" stroke-width="2"/><path d="M22 32 L30 40 L44 24" stroke="#1A1A2E" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  <div class="landing-content">
+    <div class="landing-tag">TraceMe · Prototype · HEG Genève</div>
+    <h1>Comprendre tes <em>traces</em> en ligne.</h1>
+    <p class="lead">Un parcours interactif pour le Cycle d'orientation. 12 chapitres, 15 minutes, et tu vois ton téléphone réagir à chacun de tes choix.</p>
+    <div class="mode-grid">
+      <div class="mode-card student" onclick="goToAvatar()">
+        <div class="mode-icon"><svg width="32" height="32" viewBox="0 0 32 32"><circle cx="16" cy="11" r="6" fill="white" stroke="#1A1A2E" stroke-width="2"/><path d="M5 28 Q5 18 16 18 Q27 18 27 28" fill="white" stroke="#1A1A2E" stroke-width="2"/></svg></div>
+        <h2>Mode élève</h2>
+        <p>Plonge dans une année dans la vie d'un ado. Fais tes choix, et regarde ton téléphone réagir en direct : Instagram, WhatsApp, TikTok...</p>
+        <div class="mode-meta">~15 minutes · Aucun compte requis</div>
+      </div>
+      <div class="mode-card teacher" onclick="goToTeacher()">
+        <div class="mode-icon"><svg width="32" height="32" viewBox="0 0 32 32"><rect x="4" y="6" width="24" height="18" rx="2" fill="white" stroke="#1A1A2E" stroke-width="2"/><rect x="8" y="11" width="6" height="4" fill="#1A1A2E"/><rect x="16" y="11" width="8" height="4" fill="#1A1A2E"/></svg></div>
+        <h2>Mode enseignant</h2>
+        <p>Tableau de bord pour suivre les résultats agrégés de ta classe, repérer les lacunes prioritaires et préparer une séance.</p>
+        <div class="mode-meta">Démo · Données anonymisées</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="avatar" class="screen">
+  <div class="container" style="padding-top: 60px;">
+    <div class="avatar-create">
+      <h2>Crée ton avatar</h2>
+      <p>Ce personnage va vivre une année à ta place. Toutes les données restent sur ton appareil.</p>
+      <div class="field">
+        <label for="avatar-name">Comment s'appelle-t-il / elle ?</label>
+        <input type="text" id="avatar-name" placeholder="Léo, Lina, Sam, Noa..." maxlength="20">
+      </div>
+      <div class="field">
+        <label>Choisis un style</label>
+        <div class="style-grid" id="style-grid"></div>
+      </div>
+      <div style="display: flex; gap: 12px; justify-content: space-between; margin-top: 32px; flex-wrap: wrap;">
+        <button class="btn btn-ghost" onclick="showScreen('landing')">← Retour</button>
+        <button class="btn btn-primary" id="start-game" onclick="startGame()" disabled>Démarrer septembre →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="game" class="screen">
+  <div class="game-header">
+    <div class="game-header-inner">
+      <div class="avatar-mini">
+        <div class="avatar-mini-img" id="header-avatar"></div>
+        <div>
+          <div class="avatar-mini-name" id="header-name">Léo</div>
+          <div class="avatar-mini-meta" id="header-month">Septembre · 14 ans</div>
+        </div>
+      </div>
+      <div class="stats-bar">
+        <div class="stat-jauge privacy"><div class="stat-jauge-label"><span>🛡️ Vie privée</span><span class="num" id="num-privacy">75</span></div><div class="stat-jauge-bar"><div class="stat-jauge-fill" id="bar-privacy" style="width: 75%;"></div></div></div>
+        <div class="stat-jauge reputation"><div class="stat-jauge-label"><span>⭐ E-réputation</span><span class="num" id="num-reputation">50</span></div><div class="stat-jauge-bar"><div class="stat-jauge-fill" id="bar-reputation" style="width: 50%;"></div></div></div>
+        <div class="stat-jauge wellbeing"><div class="stat-jauge-label"><span>💚 Bien-être</span><span class="num" id="num-wellbeing">70</span></div><div class="stat-jauge-bar"><div class="stat-jauge-fill" id="bar-wellbeing" style="width: 70%;"></div></div></div>
+        <div class="stat-jauge algo"><div class="stat-jauge-label"><span>🤖 Profil algo</span><span class="num" id="num-algo">10</span></div><div class="stat-jauge-bar"><div class="stat-jauge-fill" id="bar-algo" style="width: 10%;"></div></div></div>
+      </div>
+    </div>
+  </div>
+  <div class="container">
+    <div class="chapter-wrap">
+      <div class="chapter-progress" id="progress"></div>
+      <div class="chapter-month" id="chapter-month-label">Mois 01 · Septembre</div>
+      <div class="game-grid">
+        <div class="chapter-card">
+          <div class="chapter-body">
+            <h2 class="chapter-title" id="chapter-title">—</h2>
+            <div class="chapter-text" id="chapter-text">—</div>
+            <div class="dilemma-prompt" id="chapter-dilemma">—</div>
+            <div class="choices" id="chapter-choices"></div>
+            <div class="consequence" id="consequence">
+              <div class="consequence-tag">Conséquence</div>
+              <div class="consequence-text" id="conseq-text"></div>
+              <div class="consequence-traces"><div class="consequence-traces-title">Traces générées</div><ul id="conseq-traces-list"></ul></div>
+              <div class="impacts" id="conseq-impacts"></div>
+              <div class="next-btn-wrap"><button class="btn btn-primary" onclick="nextChapter()">Continuer →</button></div>
+            </div>
+          </div>
+        </div>
+        <div class="phone-wrap">
+          <div class="phone-label" id="phone-label">📱 Ton téléphone</div>
+          <div class="phone"><div class="phone-screen">
+            <div class="phone-status-bar"><span class="time">14:32</span><span class="icons"><span>📶</span><span class="battery"></span></span></div>
+            <div class="phone-content" id="phone-content"></div>
+          </div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="reveal" class="screen">
+  <div class="container">
+    <div class="reveal-screen">
+      <div class="reveal-header">
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--ink-muted); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 12px;">// Août — Postulation pour un stage</div>
+        <h1>Le recruteur<br>a tapé ton nom.</h1>
+        <p id="reveal-intro">Voici ce qu'il a vu en quelques secondes sur Google.</p>
+      </div>
+      <div class="google-mock">
+        <div class="google-bar">
+          <div class="google-logo"><span class="b">G</span><span class="o1">o</span><span class="o2">o</span><span class="g">g</span><span class="l">l</span><span class="e">e</span></div>
+          <div class="google-search-box"><span>🔍</span><span id="search-query">—</span></div>
+        </div>
+        <div class="google-results"><div class="search-tip" id="search-meta">—</div><div id="search-results"></div></div>
+      </div>
+      <div class="recruiter-card">
+        <h3>Réponse du recruteur</h3>
+        <div class="from">De : sarah.duparc@swissmobility.ch</div>
+        <p id="recruiter-text">—</p>
+        <p class="signature">— Sarah Duparc, RH</p>
+      </div>
+      <h2 class="display" style="font-size: 32px; text-align: center; margin-bottom: 24px;">Ton bilan après un an</h2>
+      <div class="final-stats" id="final-stats"></div>
+      <div class="mirror-prompt">
+        <h2>Et maintenant, à <em>toi</em>.</h2>
+        <p>Ouvre Google. Tape ton vrai prénom et nom. Que verrais-tu si tu étais ce recruteur ?</p>
+        <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+          <button class="btn btn-sun" onclick="window.open('https://www.google.com/search?q=' + encodeURIComponent(prompt('Tape ton prénom et ton nom :', '') || ''), '_blank')">Lancer ma recherche</button>
+          <button class="btn" onclick="restart()" style="background: var(--paper);">Rejouer un autre parcours</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="teacher" class="screen">
+  <div class="container">
+    <div class="teacher-header">
+      <div>
+        <h1>Tableau de bord — Classe 10A</h1>
+        <div class="meta" style="margin-top: 8px;">Données anonymisées · 24 élèves · Mise à jour il y a 2 min</div>
+      </div>
+      <div style="display: flex; gap: 10px;">
+        <button class="btn btn-small btn-ghost" onclick="showScreen('landing')">← Retour</button>
+        <button class="btn btn-small btn-mint">Exporter le rapport</button>
+      </div>
+    </div>
+    <div class="dashboard-grid">
+      <div class="kpi-card coral"><div class="kpi-label">Élèves ayant terminé</div><div class="kpi-value">22<span style="font-size: 18px; color: var(--ink-muted);">/24</span></div><div class="kpi-sub">92 % de complétion</div></div>
+      <div class="kpi-card mint"><div class="kpi-label">Score moyen vie privée</div><div class="kpi-value">68<span style="font-size: 18px; color: var(--ink-muted);">/100</span></div><div class="kpi-sub">Bon niveau global</div></div>
+      <div class="kpi-card sun"><div class="kpi-label">Connaissance droit oubli</div><div class="kpi-value">31 %</div><div class="kpi-sub">À renforcer en priorité</div></div>
+      <div class="kpi-card lavender"><div class="kpi-label">Conscience algo</div><div class="kpi-value">42 %</div><div class="kpi-sub">Lacune principale</div></div>
+    </div>
+    <div class="insight-card">
+      <div class="insight-tag">⚡ Insight pédagogique #1</div>
+      <div class="insight-title">Le profilage algorithmique est la plus grosse lacune de la classe</div>
+      <div class="insight-body">Seuls 42 % de tes élèves identifient correctement que la publicité est ciblée à partir de leurs traces. <strong>Recommandation :</strong> insister sur les chapitres décembre (permissions) et janvier (recherches) où le profil algo grimpe le plus.</div>
+    </div>
+    <div class="insight-card">
+      <div class="insight-tag">⚡ Insight pédagogique #2</div>
+      <div class="insight-title">68 % de tes élèves ont déjà été témoins d'un incident en ligne</div>
+      <div class="insight-body">Les chapitres novembre (groupe WhatsApp), avril (faux compte) et mars (vidéo virale) ont généré le plus de réactions. <strong>Recommandation :</strong> organiser une discussion en classe sur les rôles de témoin, victime, complice.</div>
+    </div>
+    <div class="panels-grid">
+      <div class="panel">
+        <h3>Scores moyens par dimension</h3>
+        <div class="panel-sub">Moyenne de la classe sur 100</div>
+        <div class="bar-row"><div class="bar-label"><span>🛡️ Vie privée</span><span class="pct">68/100</span></div><div class="bar-track"><div class="bar-fill privacy" style="width: 68%;"></div></div></div>
+        <div class="bar-row"><div class="bar-label"><span>⭐ E-réputation</span><span class="pct">54/100</span></div><div class="bar-track"><div class="bar-fill reputation" style="width: 54%;"></div></div></div>
+        <div class="bar-row"><div class="bar-label"><span>💚 Bien-être</span><span class="pct">61/100</span></div><div class="bar-track"><div class="bar-fill wellbeing" style="width: 61%;"></div></div></div>
+        <div class="bar-row"><div class="bar-label"><span>🤖 Profil algo</span><span class="pct">47/100</span></div><div class="bar-track"><div class="bar-fill algo" style="width: 47%;"></div></div></div>
+        <div style="font-size: 12px; color: var(--ink-muted); margin-top: 12px; font-style: italic;">Pour le profil algo, plus c'est bas, mieux c'est.</div>
+      </div>
+      <div class="panel">
+        <h3>Chapitres les plus difficiles</h3>
+        <div class="panel-sub">Pourcentage de mauvais choix par chapitre</div>
+        <div class="bar-row"><div class="bar-label"><span>Janvier — Recherches intimes</span><span class="pct">73 %</span></div><div class="bar-track"><div class="bar-fill algo" style="width: 73%;"></div></div></div>
+        <div class="bar-row"><div class="bar-label"><span>Décembre — Permissions</span><span class="pct">62 %</span></div><div class="bar-track"><div class="bar-fill algo" style="width: 62%;"></div></div></div>
+        <div class="bar-row"><div class="bar-label"><span>Juillet — Stories vacances</span><span class="pct">58 %</span></div><div class="bar-track"><div class="bar-fill algo" style="width: 58%;"></div></div></div>
+        <div class="bar-row"><div class="bar-label"><span>Octobre — Photo soirée</span><span class="pct">45 %</span></div><div class="bar-track"><div class="bar-fill algo" style="width: 45%;"></div></div></div>
+        <div class="bar-row"><div class="bar-label"><span>Mai — Secret partagé</span><span class="pct">38 %</span></div><div class="bar-track"><div class="bar-fill algo" style="width: 38%;"></div></div></div>
+      </div>
+    </div>
+    <div class="student-list">
+      <h3>Résultats individuels (anonymisés)</h3>
+      <div class="panel-sub">Chaque élève est identifié par un pseudo qu'il a choisi. Aucune donnée nominative n'est stockée.</div>
+      <div class="student-row header"><span></span><span>Pseudo</span><span>🛡️</span><span>⭐</span><span>💚</span><span>🤖</span></div>
+      <div id="student-rows"></div>
+    </div>
+  </div>
+</div>
+<script>
+const avatarStyles = [
+  { id: 'a', bg: '#FFD93D', svg: `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="#FFE4D2" stroke="#1A1A2E" stroke-width="3"/><path d="M28 38 Q28 22 50 22 Q72 22 72 38 L72 45 Q72 35 50 35 Q28 35 28 45 Z" fill="#3D2914" stroke="#1A1A2E" stroke-width="3"/><circle cx="40" cy="50" r="3" fill="#1A1A2E"/><circle cx="60" cy="50" r="3" fill="#1A1A2E"/><path d="M40 65 Q50 70 60 65" stroke="#1A1A2E" stroke-width="3" fill="none" stroke-linecap="round"/></svg>` },
+  { id: 'b', bg: '#FF6B6B', svg: `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="#FFD7B5" stroke="#1A1A2E" stroke-width="3"/><path d="M25 40 Q25 18 50 18 Q75 18 75 40 L78 42 Q70 30 60 32 Q55 28 45 28 Q35 26 30 32 Q22 35 25 42 Z" fill="#8B4513" stroke="#1A1A2E" stroke-width="3"/><circle cx="40" cy="50" r="3" fill="#1A1A2E"/><circle cx="60" cy="50" r="3" fill="#1A1A2E"/><path d="M38 64 Q50 72 62 64" stroke="#1A1A2E" stroke-width="3" fill="none" stroke-linecap="round"/></svg>` },
+  { id: 'c', bg: '#4ECDC4', svg: `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="#E8C5A5" stroke="#1A1A2E" stroke-width="3"/><path d="M22 45 Q22 15 50 15 Q78 15 78 45 Q78 50 75 50 Q75 32 50 32 Q25 32 25 50 Q22 50 22 45 Z" fill="#1A1A2E" stroke="#1A1A2E" stroke-width="3"/><circle cx="40" cy="52" r="3" fill="#1A1A2E"/><circle cx="60" cy="52" r="3" fill="#1A1A2E"/><path d="M40 66 Q50 70 60 66" stroke="#1A1A2E" stroke-width="3" fill="none" stroke-linecap="round"/></svg>` },
+  { id: 'd', bg: '#A78BFA', svg: `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="#F5D5A0" stroke="#1A1A2E" stroke-width="3"/><path d="M25 38 Q25 16 50 16 Q75 16 75 38 Q75 50 70 60 Q72 32 50 32 Q28 32 30 60 Q25 50 25 38 Z" fill="#E94B3C" stroke="#1A1A2E" stroke-width="3"/><circle cx="40" cy="50" r="3" fill="#1A1A2E"/><circle cx="60" cy="50" r="3" fill="#1A1A2E"/><path d="M40 64 Q50 70 60 64" stroke="#1A1A2E" stroke-width="3" fill="none" stroke-linecap="round"/></svg>` },
+];
+
+const A = (s) => avatarStyles[s].svg;
+
+const phoneApps = {
+  instagramEmpty: (n, s) => `<div class="ig-app"><div class="ig-topbar"><span class="ig-logo">Instagram</span><span class="ig-icons">+ ☰</span></div><div class="ig-profile-section"><div class="ig-avatar">${A(s)}</div><div class="ig-stats"><div class="ig-stat"><div class="ig-stat-num">0</div><div class="ig-stat-label">Posts</div></div><div class="ig-stat"><div class="ig-stat-num">0</div><div class="ig-stat-label">Abonnés</div></div><div class="ig-stat"><div class="ig-stat-num">0</div><div class="ig-stat-label">Suivis</div></div></div></div><div class="ig-profile-info"><div class="ig-name">${n}</div><div class="ig-username">@${n.toLowerCase()}_co</div><div style="font-size: 11px; color: #737373; margin-top: 8px; font-style: italic;">En attente de création...</div></div><div class="ig-grid">${Array(9).fill('<div class="ig-post"></div>').join('')}</div></div>`,
+  instagramPublic: (n, s) => `<div class="ig-app"><div class="ig-topbar"><span class="ig-logo">Instagram</span><span class="ig-icons">+ ☰</span></div><div class="ig-profile-section"><div class="ig-avatar">${A(s)}</div><div class="ig-stats"><div class="ig-stat"><div class="ig-stat-num">23</div><div class="ig-stat-label">Posts</div></div><div class="ig-stat"><div class="ig-stat-num">186</div><div class="ig-stat-label">Abonnés</div></div><div class="ig-stat"><div class="ig-stat-num">201</div><div class="ig-stat-label">Suivis</div></div></div></div><div class="ig-profile-info"><div class="ig-name">${n} (vrai nom)</div><div class="ig-username">@${n.toLowerCase()}.real</div><span class="ig-privacy-badge public">🌐 Compte public</span></div><div class="ig-grid">${[1,2,3,4,5,6,7,8,9].map(i=>`<div class="ig-post p${(i%6)+1}"></div>`).join('')}</div></div>`,
+  instagramPrivate: (n, s) => `<div class="ig-app"><div class="ig-topbar"><span class="ig-logo">Instagram</span><span class="ig-icons">+ ☰</span></div><div class="ig-profile-section"><div class="ig-avatar">${A(s)}</div><div class="ig-stats"><div class="ig-stat"><div class="ig-stat-num">12</div><div class="ig-stat-label">Posts</div></div><div class="ig-stat"><div class="ig-stat-num">38</div><div class="ig-stat-label">Abonnés</div></div><div class="ig-stat"><div class="ig-stat-num">42</div><div class="ig-stat-label">Suivis</div></div></div></div><div class="ig-profile-info"><div class="ig-name">surnom_${n.toLowerCase().slice(0,3)}</div><div class="ig-username">@${n.toLowerCase().slice(0,3)}_xyz</div><span class="ig-privacy-badge private">🔒 Compte privé</span></div><div style="padding: 30px 20px; text-align: center; color: #737373; font-size: 12px;"><div style="font-size: 28px; margin-bottom: 8px;">🔒</div>Ce compte est privé.<br>Seuls tes amis voient.</div></div>`,
+  instagramHybrid: (n, s) => `<div class="ig-app"><div class="ig-topbar"><span class="ig-logo">Instagram</span><span class="ig-icons">+ ☰</span></div><div class="ig-profile-section"><div class="ig-avatar">${A(s)}</div><div class="ig-stats"><div class="ig-stat"><div class="ig-stat-num">8</div><div class="ig-stat-label">Posts</div></div><div class="ig-stat"><div class="ig-stat-num">94</div><div class="ig-stat-label">Abonnés</div></div><div class="ig-stat"><div class="ig-stat-num">120</div><div class="ig-stat-label">Suivis</div></div></div></div><div class="ig-profile-info"><div class="ig-name">${n.toLowerCase()}_aesthetic</div><div class="ig-username">@${n.toLowerCase()}_aesthetic</div><span class="ig-privacy-badge public">🌐 Public · Pseudo</span></div><div class="ig-grid">${[1,2,3,4,5,6,7,8].map(i=>`<div class="ig-post p${(i%6)+1}"></div>`).join('')}<div class="ig-post"></div></div></div>`,
+  whatsappToxic: () => `<div class="wa-app"><div class="wa-topbar"><span class="wa-back">←</span><div class="wa-avatar-group">👥</div><div class="wa-title"><div class="wa-title-name">WhatsApp Classe 10A</div><div class="wa-title-sub">24 participants</div></div></div><div class="wa-messages"><div class="wa-message from-them toxic" style="animation-delay:0s;"><div class="wa-author">Tom</div>Vous avez vu le pull de Nina 💀<div class="wa-time">14:31</div></div><div class="wa-message from-them toxic" style="animation-delay:0.5s;"><div class="wa-author">Léa</div>Mdrrr on dirait sa grand-mère<div class="wa-time">14:32</div></div><div class="wa-message from-them toxic" style="animation-delay:1s;"><div class="wa-author">Tom</div>Sérieux elle a aucun goût<div class="wa-time">14:32</div></div><div class="wa-message from-them toxic" style="animation-delay:1.5s;"><div class="wa-author">Hugo</div>🤡🤡🤡<div class="wa-time">14:33</div></div></div></div>`,
+  whatsappLeft: () => `<div class="wa-app"><div class="wa-topbar"><span class="wa-back">←</span><div class="wa-avatar-group">👥</div><div class="wa-title"><div class="wa-title-name">WhatsApp Classe 10A</div><div class="wa-title-sub">23 participants</div></div></div><div class="wa-messages"><div class="wa-message from-them toxic" style="animation-delay:0s;"><div class="wa-author">Tom</div>Mdrrr Nina aucun goût<div class="wa-time">14:32</div></div><div style="text-align:center; font-size:10px; color:#999; padding:16px 0; font-style:italic;">Tu as quitté ce groupe à 14:34</div><div class="wa-message from-you" style="animation-delay:0.6s; max-width:88%;">→ Nina (privé) : Salut, j'ai vu ce qui se passait dans le groupe. C'est pas ok. Je suis là si tu veux parler.<div class="wa-time">14:35 ✓✓</div></div></div></div>`,
+  whatsappJoined: () => `<div class="wa-app"><div class="wa-topbar"><span class="wa-back">←</span><div class="wa-avatar-group">👥</div><div class="wa-title"><div class="wa-title-name">WhatsApp Classe 10A</div><div class="wa-title-sub">24 participants</div></div></div><div class="wa-messages"><div class="wa-message from-them toxic" style="animation-delay:0s;"><div class="wa-author">Tom</div>Vous avez vu le pull de Nina 💀<div class="wa-time">14:31</div></div><div class="wa-message from-you toxic" style="animation-delay:0.5s;">😂😂 cassé<div class="wa-time">14:32 ✓✓</div></div><div class="wa-message from-them toxic" style="animation-delay:1s;"><div class="wa-author">Léa</div>Mdr on dirait sa grand-mère<div class="wa-time">14:33</div></div><div class="wa-message from-you toxic" style="animation-delay:1.5s;">Grave 🦫<div class="wa-time">14:33 ✓✓</div></div></div></div>`,
+  settingsAllOn: () => `<div class="set-app"><div class="set-title">Permissions</div><div class="set-section"><div class="set-row"><div class="set-icon loc">📍</div><div class="set-row-label">Localisation</div><div class="set-toggle on"></div></div><div class="set-row"><div class="set-icon cam">📷</div><div class="set-row-label">Caméra</div><div class="set-toggle on"></div></div><div class="set-row"><div class="set-icon mic">🎤</div><div class="set-row-label">Microphone</div><div class="set-toggle on"></div></div><div class="set-row"><div class="set-icon contacts">👥</div><div class="set-row-label">Contacts</div><div class="set-toggle on"></div></div><div class="set-row"><div class="set-icon photos">🖼️</div><div class="set-row-label">Photos</div><div class="set-toggle on"></div></div></div><div style="font-size:10px; color:#C00000; padding:0 4px; font-weight:600;">⚠ 5 apps accèdent à tout en permanence</div></div>`,
+  settingsAllOff: () => `<div class="set-app"><div class="set-title">Permissions</div><div class="set-section"><div class="set-row"><div class="set-icon loc">📍</div><div class="set-row-label">Localisation</div><div class="set-toggle"></div></div><div class="set-row"><div class="set-icon cam">📷</div><div class="set-row-label">Caméra</div><div class="set-toggle"></div></div><div class="set-row"><div class="set-icon mic">🎤</div><div class="set-row-label">Microphone</div><div class="set-toggle"></div></div><div class="set-row"><div class="set-icon contacts">👥</div><div class="set-row-label">Contacts</div><div class="set-toggle"></div></div><div class="set-row"><div class="set-icon photos">🖼️</div><div class="set-row-label">Photos</div><div class="set-toggle"></div></div></div><div style="font-size:10px; color:#2D6738; padding:0 4px; font-weight:600;">✓ Tu actives au cas par cas</div></div>`,
+  settingsGeoOnly: () => `<div class="set-app"><div class="set-title">Permissions</div><div class="set-section"><div class="set-row"><div class="set-icon loc">📍</div><div class="set-row-label">Localisation (Snap)</div><div class="set-toggle on"></div></div><div class="set-row"><div class="set-icon cam">📷</div><div class="set-row-label">Caméra</div><div class="set-toggle"></div></div><div class="set-row"><div class="set-icon mic">🎤</div><div class="set-row-label">Microphone</div><div class="set-toggle"></div></div><div class="set-row"><div class="set-icon contacts">👥</div><div class="set-row-label">Contacts</div><div class="set-toggle"></div></div><div class="set-row"><div class="set-icon photos">🖼️</div><div class="set-row-label">Photos</div><div class="set-toggle"></div></div></div><div style="font-size:10px; color:#A88A00; padding:0 4px; font-weight:600;">Snap Maps actif · Tes trajets visibles</div></div>`,
+  googleHistory: (n) => `<div class="ggl-app"><div class="ggl-search-bar"><div class="ggl-logo"><span class="b">G</span><span class="o1">o</span><span class="o2">o</span><span class="g">g</span><span class="l">l</span><span class="e">e</span></div><div class="ggl-search-input"><span>🕓</span><span style="font-size:10px;">Historique de ${n}</span></div></div><div class="ggl-results"><div class="ggl-result" style="animation-delay:0s;"><div class="ggl-result-url">il y a 2 min</div><div class="ggl-result-title">est-ce normal d'avoir des boutons à 14 ans</div></div><div class="ggl-result" style="animation-delay:0.3s;"><div class="ggl-result-url">il y a 5 min</div><div class="ggl-result-title">comment savoir si quelqu'un me trouve mignon</div></div><div class="ggl-result" style="animation-delay:0.6s;"><div class="ggl-result-url">il y a 8 min</div><div class="ggl-result-title">questions gênantes sur le corps</div></div></div><div style="padding:10px 14px; background:#FFE5E5; font-size:10px; color:#C00000; font-weight:600;">⚠ Toutes ces recherches sont liées à ton compte</div></div>`,
+  googleIncognito: () => `<div class="ggl-app" style="background:#202124; color:#fff;"><div class="ggl-search-bar" style="background:#202124; border-bottom-color:#3c4043;"><div style="text-align:center; font-size:32px; margin:16px 0;">🕵️</div><div style="text-align:center; font-size:14px; font-weight:600; margin-bottom:4px;">Navigation privée</div><div style="text-align:center; font-size:10px; color:#9aa0a6;">L'historique ne sera pas enregistré sur cet appareil.</div><div class="ggl-search-input" style="background:#303134; color:#fff; margin-top:14px;"><span>🔍</span><span style="font-size:10px; color:#9aa0a6;">Recherche privée</span></div></div><div style="padding:16px 14px; font-size:10px; color:#fbbc04;">ℹ Ton fournisseur d'accès (Salt, Swisscom) voit quand même les sites.</div></div>`,
+  phoneAside: () => `<div style="background:linear-gradient(180deg,#FFF4C7,#FFE4D2); height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:24px; text-align:center;"><div style="font-size:60px; margin-bottom:16px;">💬</div><div style="font-family:'Fraunces',serif; font-weight:700; font-size:18px; margin-bottom:8px; color:#1A1A2E;">Téléphone posé.</div><div style="font-size:13px; color:#4A4A6A; line-height:1.5;">Tu parles à quelqu'un en face à face. Aucune trace en ligne.</div><div style="margin-top:20px; padding:10px 16px; background:#fff; border-radius:10px; border:1.5px solid #1A1A2E; font-size:11px;"><strong>Le 147</strong> de Pro Juventute<br><span style="color:#4A4A6A;">Gratuit, anonyme, 24h/24</span></div></div>`,
+  igDMSuspicious: () => `<div class="ig-app"><div class="ig-topbar"><span class="ig-logo" style="font-size:14px;">← Direct</span></div><div style="padding:14px; display:flex; align-items:center; gap:10px; border-bottom:1px solid #efefef;"><div style="width:38px; height:38px; border-radius:50%; background:#efefef; display:flex; align-items:center; justify-content:center; font-size:18px;">?</div><div><div style="font-size:13px; font-weight:700;">user_2847_xyz</div><div style="font-size:10px; color:#FF6B6B;">⚠ Créé il y a 3 mois · 4 abonnés</div></div></div><div style="padding:14px; background:#fafafa; flex:1;"><div style="max-width:78%; background:#efefef; padding:10px 12px; border-radius:14px; font-size:12px; margin-bottom:8px;">Salut, on s'est croisés à la fête de Maya ? T'as un super style 😊</div><div style="font-size:9px; color:#999; margin-bottom:16px;">il y a 2 min</div><div style="max-width:78%; background:#efefef; padding:10px 12px; border-radius:14px; font-size:12px;">T'es au CO de quel quartier ? 😉</div></div></div>`,
+  igDMBlocked: () => `<div class="ig-app"><div class="ig-topbar"><span class="ig-logo" style="font-size:14px;">← Direct</span></div><div style="padding:60px 24px; text-align:center; flex:1; display:flex; flex-direction:column; justify-content:center;"><div style="font-size:50px; margin-bottom:16px;">🚫</div><div style="font-weight:700; font-size:16px; margin-bottom:8px;">Compte bloqué et signalé</div><div style="font-size:12px; color:#737373;">Tu ne recevras plus de messages.<br>Instagram va examiner ce profil.</div></div></div>`,
+  tiktokViral: (n) => `<div class="tt-app"><div class="tt-views">👁 50 247 vues</div><div class="tt-video"><div class="tt-video-content">"Quand t'oublies que t'es en cours" 😂</div></div><div class="tt-overlay"><div class="tt-username">@${n.toLowerCase()}</div><div class="tt-caption">#fyp #pourtoi #ecole</div></div><div class="tt-actions"><div class="tt-action"><div class="tt-action-icon">❤️</div><div class="tt-action-num">12K</div></div><div class="tt-action"><div class="tt-action-icon">💬</div><div class="tt-action-num">247</div></div><div class="tt-action"><div class="tt-action-icon">↗️</div><div class="tt-action-num">1.2K</div></div></div><div class="tt-comments"><div class="tt-comment" style="animation-delay:0.2s;">@maya33: 😂😂😂 mdrrr</div><div class="tt-comment mean" style="animation-delay:0.6s;">@anon: t'as l'air ridicule sérieux</div><div class="tt-comment" style="animation-delay:1s;">@tom_co: épisode de l'année</div></div></div>`,
+  tiktokDeleted: () => `<div class="tt-app" style="background:#1a1a1a;"><div style="padding:80px 24px; text-align:center; color:#fff;"><div style="font-size:50px; margin-bottom:16px;">🗑️</div><div style="font-weight:700; font-size:16px; margin-bottom:8px;">Vidéo supprimée</div><div style="font-size:12px; opacity:0.7; margin-bottom:20px;">L'original n'est plus sur ton compte.</div><div style="background:rgba(255,107,107,0.2); border:1px solid #FF6B6B; padding:12px; border-radius:10px; font-size:11px; color:#FF6B6B;">⚠ La vidéo a été reposted par 12 comptes avant ta suppression.</div></div></div>`,
+  tiktokTakedown: () => `<div class="tt-app" style="background:#fff;"><div style="padding:30px 20px; color:#1a1a1a;"><div style="font-size:36px; margin-bottom:12px;">⚖️</div><div style="font-weight:700; font-size:14px; margin-bottom:8px;">Demande de retrait envoyée</div><div style="font-size:11px; color:#4A4A6A; margin-bottom:16px;">Au titre du droit à l'effacement (RGPD/nLPD), tu demandes le retrait de la vidéo.</div><div style="background:#DBF1E1; border-left:3px solid #95D5B2; padding:10px 12px; font-size:10px; color:#2D6738; border-radius:6px;">✓ TikTok examine sous 48h<br>✓ Email de confirmation envoyé</div></div></div>`,
+  fakeAccount: (n) => `<div class="ig-app"><div class="ig-topbar"><span class="ig-logo">Instagram</span><span class="ig-icons">⚠</span></div><div class="ig-profile-section"><div class="ig-avatar" style="background:#FFE5E5;"><div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; font-size:32px;">?</div></div><div class="ig-stats"><div class="ig-stat"><div class="ig-stat-num">18</div><div class="ig-stat-label">Posts</div></div><div class="ig-stat"><div class="ig-stat-num">47</div><div class="ig-stat-label">Abonnés</div></div><div class="ig-stat"><div class="ig-stat-num">2</div><div class="ig-stat-label">Suivis</div></div></div></div><div class="ig-profile-info"><div class="ig-name" style="color:#C00000;">⚠ ${n} FAKE</div><div class="ig-username">@${n.toLowerCase()}_real_xx</div><span class="ig-privacy-badge public">⚠ Compte suspect</span></div><div style="padding:14px; background:#FFE5E5; font-size:11px; color:#C00000;">Ce compte usurpe ton identité et insulte tes camarades en se faisant passer pour toi.</div></div>`,
+  fakeAccountReported: (n) => `<div class="ig-app"><div class="ig-topbar"><span class="ig-logo">Instagram</span><span class="ig-icons">✓</span></div><div style="padding:30px 20px; text-align:center;"><div style="font-size:50px; margin-bottom:12px;">⚖️</div><div style="font-weight:700; font-size:14px; margin-bottom:8px;">Faux compte signalé</div><div style="font-size:11px; color:#737373; margin-bottom:16px;">@${n.toLowerCase()}_real_xx</div><div style="background:#DBF1E1; padding:12px; border-radius:8px; font-size:11px; color:#2D6738; text-align:left;">✓ Signalement Instagram envoyé<br>✓ Parents avertis<br>✓ Doyen contacté<br>✓ Amis prévenus</div></div></div>`,
+  secretBlackmail: () => `<div class="wa-app"><div class="wa-topbar"><span class="wa-back">←</span><div class="wa-avatar-group" style="background:#FF6B6B; color:#fff;">!</div><div class="wa-title"><div class="wa-title-name">Ancien(ne) ami(e)</div><div class="wa-title-sub">en ligne</div></div></div><div class="wa-messages"><div class="wa-message from-them toxic" style="animation-delay:0s;">J'ai toujours la photo que tu m'avais envoyée 😏<div class="wa-time">22:14</div></div><div class="wa-message from-them toxic" style="animation-delay:0.5s; max-width:60%;"><div class="blurred-photo"><div class="blur-img"></div><div class="blur-lock">🔒</div></div><div class="wa-time">22:14</div></div><div class="wa-message from-them toxic" style="animation-delay:1s;">Si tu fais pas ce que je dis, je l'envoie à toute la classe.<div class="wa-time">22:15</div></div><div class="wa-message from-them toxic" style="animation-delay:1.5s;">T'as 5 min.<div class="wa-time">22:15</div></div></div></div>`,
+  blackmailResolved: () => `<div style="background:linear-gradient(180deg,#DBF1E1,#D1F5F2); height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:24px; text-align:center;"><div style="font-size:54px; margin-bottom:16px;">🛡️</div><div style="font-family:'Fraunces',serif; font-weight:700; font-size:17px; margin-bottom:8px; color:#1A1A2E;">Tu n'es pas seul·e.</div><div style="font-size:12px; color:#2D6738; line-height:1.5; margin-bottom:16px;">Partager une photo intime de quelqu'un sans son accord est <strong>interdit par la loi</strong>. Ce n'est jamais ta faute.</div><div style="padding:12px 16px; background:#fff; border-radius:10px; border:1.5px solid #1A1A2E; font-size:11px;"><strong>Le 147</strong> de Pro Juventute<br><span style="color:#4A4A6A;">Gratuit · anonyme · 24h/24</span></div></div>`,
+  discordExams: () => `<div class="discord-app"><div style="font-weight:700; font-size:14px; margin-bottom:4px;"># corrigés-maths-10e</div><div style="font-size:10px; color:#b9bbbe; margin-bottom:16px;">347 membres</div><div style="background:#2f3136; padding:10px 12px; border-radius:6px; margin-bottom:8px;"><div style="font-weight:600; font-size:11px; color:#5865F2; margin-bottom:2px;">CorrigéKing</div><div style="font-size:11px;">📎 Corrigé_examen_demain.pdf</div><div style="font-size:9px; color:#b9bbbe; margin-top:4px;">Téléchargé par 218 personnes</div></div><div style="background:#FF6B6B22; border:1px solid #FF6B6B; padding:8px 10px; border-radius:6px; font-size:10px; color:#FF6B6B; margin-top:14px;">⚠ Chaque téléchargement est lié à ton compte Discord</div></div>`,
+  discordLeft: () => `<div class="discord-app"><div style="padding:60px 16px; text-align:center;"><div style="font-size:50px; margin-bottom:16px;">🚪</div><div style="font-weight:700; font-size:15px; margin-bottom:8px;">Tu as quitté le serveur</div><div style="font-size:11px; color:#b9bbbe; margin-bottom:16px;">Aucun téléchargement à ton nom.</div><div style="background:#DBF1E122; border:1px solid #95D5B2; padding:10px; border-radius:8px; font-size:10px; color:#95D5B2;">✓ Tu protèges la valeur de tes résultats<br>✓ Un prof de confiance est informé</div></div></div>`,
+  snapMapsVacation: (n) => `<div class="snap-app"><div class="snap-topbar"><div class="snap-logo">👻</div><div class="snap-title">Snap Maps</div></div><div class="snap-map"><div class="snap-pin me" style="top:30%; left:35%;">${n[0]}</div><div class="snap-pin friend" style="top:20%; left:60%;">M</div><div class="snap-pin friend" style="top:50%; left:50%;">T</div><div style="position:absolute; bottom:14px; left:14px; right:14px; background:rgba(0,0,0,0.7); color:#fff; padding:8px 12px; border-radius:8px; font-size:10px;">📍 <strong>${n}</strong> · Barcelone, Espagne<br><span style="opacity:0.7;">Position publique · vu par 184 personnes</span></div></div></div>`,
+  snapMapsOff: () => `<div style="background:#1A1A2E; height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:30px; text-align:center; color:#fff;"><div style="font-size:50px; margin-bottom:16px; opacity:0.5;">📵</div><div style="font-weight:700; font-size:16px; margin-bottom:8px;">Localisation désactivée</div><div style="font-size:12px; opacity:0.7; line-height:1.5;">Tu profites de tes vacances sans laisser de traces en direct.</div></div>`,
+  snapMapsDelayed: () => `<div class="snap-app"><div class="snap-topbar"><div class="snap-logo">👻</div><div class="snap-title">Memories</div></div><div style="background:linear-gradient(135deg,#FFD93D,#FFB088); height:100%; padding:20px; color:#1A1A2E;"><div style="font-weight:700; font-size:14px; margin-bottom:12px;">📸 À publier plus tard</div><div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;"><div style="aspect-ratio:1; background:rgba(0,0,0,0.1); border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:24px;">🏖️</div><div style="aspect-ratio:1; background:rgba(0,0,0,0.1); border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:24px;">🌅</div><div style="aspect-ratio:1; background:rgba(0,0,0,0.1); border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:24px;">🍕</div><div style="aspect-ratio:1; background:rgba(0,0,0,0.1); border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:24px;">🌊</div></div><div style="margin-top:16px; font-size:11px;">22 photos en local. Tu choisiras au retour.</div></div></div>`,
+  finalGoogle: (n, results) => `<div class="ggl-app"><div class="ggl-search-bar"><div class="ggl-logo"><span class="b">G</span><span class="o1">o</span><span class="o2">o</span><span class="g">g</span><span class="l">l</span><span class="e">e</span></div><div class="ggl-search-input"><span>🔍</span><span>${n}</span></div></div><div class="ggl-results">${results.slice(0,3).map((r,i)=>`<div class="ggl-result" style="animation-delay:${i*0.3}s;"><div class="ggl-result-url">${r.url}</div><div class="ggl-result-title">${r.title}</div><div class="ggl-result-snippet">${r.snippet}</div></div>`).join('')}</div></div>`,
+  finalGoogleClean: (n) => `<div class="ggl-app"><div class="ggl-search-bar"><div class="ggl-logo"><span class="b">G</span><span class="o1">o</span><span class="o2">o</span><span class="g">g</span><span class="l">l</span><span class="e">e</span></div><div class="ggl-search-input"><span>🔍</span><span>${n}</span></div></div><div class="ggl-results"><div class="ggl-result" style="animation-delay:0s;"><div class="ggl-result-url">linkedin.com › in › ${n.toLowerCase()}</div><div class="ggl-result-title">${n} · Étudiant·e Cycle d'orientation</div><div class="ggl-result-snippet">Profil bien tenu, parcours clair.</div></div><div style="margin-top:16px; padding:12px; background:#DBF1E1; border-radius:8px; font-size:11px; color:#2D6738;">✓ Aucun élément problématique trouvé</div></div></div>`,
+};
+const chapters = [
+  { month: "Septembre", title: "Premier jour au CO",
+    text: "C'est ta première rentrée au Cycle. À la récré, tout le monde s'échange des comptes Insta et Snap. Tu n'as pas encore de compte Insta. Tes nouveaux camarades te disent de t'inscrire pour qu'ils puissent t'ajouter.",
+    dilemma: "Tu crées ton compte Instagram. Quel profil choisis-tu ?",
+    phoneInitial: 'instagramEmpty', phoneLabel: '📱 Tu ouvres Instagram pour la 1ère fois',
+    choices: [
+      { letter: 'A', text: "Compte public, vrai nom et vraie photo. Je veux que tout le monde puisse me trouver.", impact: { privacy: -25, reputation: 5, wellbeing: 0, algo: 15 },
+        consequence: "Ton compte est visible par tout le monde, y compris des inconnus. Tes camarades te trouvent facilement, mais d'autres personnes peuvent aussi t'identifier, voir tes photos et tes lieux fréquentés.",
+        traces: ["Vrai prénom et nom indexés par Google", "Photo de visage scannable par reconnaissance d'image", "École et âge faciles à déduire"], phoneResult: 'instagramPublic', phoneResultLabel: '📱 Profil EN LIGNE — visible par tous' },
+      { letter: 'B', text: "Compte privé, un surnom et un avatar dessiné. J'accepte seulement mes amis proches.", impact: { privacy: 15, reputation: 0, wellbeing: 5, algo: 5 },
+        consequence: "Très bon réflexe. Ton compte n'est visible que par les personnes que tu choisis. Tu profites du réseau social sans laisser ton identité civile traîner sur Internet.",
+        traces: ["Compte créé mais profil non public", "Données collectées par Meta quand même"], phoneResult: 'instagramPrivate', phoneResultLabel: '📱 Compte privé — sous contrôle' },
+      { letter: 'C', text: "Compte public, mais pseudo et photo où on me reconnaît pas trop.", impact: { privacy: -5, reputation: 5, wellbeing: 5, algo: 10 },
+        consequence: "Un compromis intéressant. Tes amis te reconnaissent grâce à des indices, mais tu restes moins identifiable par des inconnus. Attention : ton numéro de téléphone reste lié à ton compte.",
+        traces: ["Pseudo lié à ton numéro", "Photo de profil scannable même partielle"], phoneResult: 'instagramHybrid', phoneResultLabel: '📱 Profil hybride — public mais pseudo' },
+    ] },
+  { month: "Octobre", title: "L'anniversaire de Maya",
+    text: "Soirée chez ta meilleure amie. Vous prenez plein de photos. Sur l'une d'elles, tu fais une grimace ridicule. Quelqu'un veut la poster en story Insta. <strong>Tu apparais clairement dessus.</strong>",
+    dilemma: "Que fais-tu ?", phoneInitial: 'instagramPublic', phoneLabel: '📱 La story va être publiée...',
+    choices: [
+      { letter: 'A', text: "Je dis oui, c'est juste pour rigoler entre potes.", impact: { privacy: -15, reputation: -10, wellbeing: -5, algo: 5 },
+        consequence: "La photo finit sur Insta. Elle a déjà été screenshot et reposted dans plusieurs groupes WhatsApp. Tu as perdu le contrôle de cette image.",
+        traces: ["Photo indexée par Instagram", "Reconnaissance faciale : toi + 4 autres identifiés", "Captures qui circulent dans plusieurs groupes"], phoneResult: 'instagramPublic', phoneResultLabel: '📱 La photo circule déjà partout' },
+      { letter: 'B', text: "Je préfère pas. Je demande gentiment qu'on me publie pas dessus.", impact: { privacy: 15, reputation: 0, wellbeing: 5, algo: 0 },
+        consequence: "Maya respecte ta demande. Tu peux dire non sans gâcher la soirée. Tu protèges ce qui sort de toi en ligne.",
+        traces: ["Aucune nouvelle trace publique générée"], phoneResult: 'instagramPublic', phoneResultLabel: '📱 Aucune nouvelle photo de toi' },
+      { letter: 'C', text: "Elle peut la poster mais qu'elle floute mon visage.", impact: { privacy: 0, reputation: 0, wellbeing: 0, algo: 0 },
+        consequence: "Bon compromis. Maya floute ton visage. Mais d'autres invités ont aussi pris la photo et eux ne flouteront pas.",
+        traces: ["Version floutée publiée", "Versions non floutées sur d'autres téléphones"], phoneResult: 'instagramPublic', phoneResultLabel: '📱 Version floutée publiée' },
+    ] },
+  { month: "Novembre", title: "Le groupe WhatsApp",
+    text: "Un groupe WhatsApp s'est créé entre tous les élèves. Au début c'est sympa. Puis quelqu'un se moque de Nina. Les blagues deviennent vraiment méchantes. <strong>Tu n'as rien dit, mais tu lis tout. Et tu n'as pas quitté le groupe.</strong>",
+    dilemma: "Que choisis-tu ?", phoneInitial: 'whatsappToxic', phoneLabel: '📱 Le groupe WhatsApp en ce moment',
+    choices: [
+      { letter: 'A', text: "Je quitte le groupe. J'écris un message privé à Nina pour lui dire que je suis là.", impact: { privacy: 5, reputation: 10, wellbeing: 10, algo: 0 },
+        consequence: "Tu refuses d'être complice par ton silence. Quitter un groupe toxique est un acte fort. Ton message à Nina peut vraiment l'aider. Si ça continue, parles-en à un adulte de confiance ou au 147 de Pro Juventute.",
+        traces: ["Sortie du groupe enregistrée", "Message de soutien archivé"], phoneResult: 'whatsappLeft', phoneResultLabel: '📱 Tu as quitté et soutenu Nina' },
+      { letter: 'B', text: "Je ne dis rien, je reste juste dans le groupe.", impact: { privacy: -5, reputation: -15, wellbeing: -10, algo: 5 },
+        consequence: "Le silence est aussi un message. Tu fais partie du groupe quand les insultes circulent. Si l'école découvre le groupe, tu seras associé, même sans avoir tapé un mot.",
+        traces: ["Présence dans le groupe enregistrée", "Logs de lecture conservés par WhatsApp"], phoneResult: 'whatsappToxic', phoneResultLabel: '📱 Tu restes, tu lis tout en silence' },
+      { letter: 'C', text: "Je participe en mode ironique, je tape quelques blagues.", impact: { privacy: -15, reputation: -25, wellbeing: -20, algo: 10 },
+        consequence: "Tes messages sont écrits, horodatés, archivés pour toujours. Le jour où des captures circulent, tes mots seront associés à ton nom. Nina mettra du temps à pardonner.",
+        traces: ["Messages signés à ton nom, horodatés", "Stockage indéfini chez Meta", "Captures probables (boyd 2016)"], phoneResult: 'whatsappJoined', phoneResultLabel: '📱 Tes messages restent à jamais' },
+    ] },
+  { month: "Décembre", title: "Le nouveau téléphone",
+    text: "Cadeau de Noël : un téléphone tout neuf. À l'allumage, des dizaines de demandes de permissions apparaissent. <strong>« Autoriser TikTok à accéder à la localisation ? » « Autoriser Snap à accéder aux contacts ? »</strong>",
+    dilemma: "Comment configures-tu les permissions ?", phoneInitial: 'settingsAllOff', phoneLabel: '📱 Réglages — Permissions',
+    choices: [
+      { letter: 'A', text: "J'accepte tout, c'est plus rapide et les applis marchent mieux.", impact: { privacy: -30, reputation: -5, wellbeing: -5, algo: 25 },
+        consequence: "Les applications collectent ta position GPS en permanence, ont accès à ta liste de contacts, et scannent tes photos. Tu deviens transparent pour ces plateformes.",
+        traces: ["Position GPS transmise en continu à Snap, Insta, TikTok", "Liste de contacts envoyée à Meta et ByteDance", "Bibliothèque photo scannée"], phoneResult: 'settingsAllOn', phoneResultLabel: '📱 Toutes les permissions ACTIVÉES' },
+      { letter: 'B', text: "Je refuse tout pour l'instant. Je verrai au cas par cas.", impact: { privacy: 25, reputation: 0, wellbeing: 5, algo: -15 },
+        consequence: "Excellente décision, rare chez les ados. Les applis fonctionneront avec un peu moins de fonctions, mais tu gardes le contrôle. C'est ce que recommande la loi suisse (nLPD) pour les mineurs.",
+        traces: ["Permissions minimales activées", "Profilage limité"], phoneResult: 'settingsAllOff', phoneResultLabel: '📱 Permissions désactivées — sous contrôle' },
+      { letter: 'C', text: "J'accepte juste la localisation (Snap Maps c'est pratique). Je refuse le reste.", impact: { privacy: -10, reputation: 0, wellbeing: 0, algo: 10 },
+        consequence: "Choix réfléchi. Snap cartographie ton quotidien, mais tu l'as choisi en connaissance de cause. Tes contacts et photos restent protégés.",
+        traces: ["Itinéraires quotidiens enregistrés par Snap", "Position partagée avec tes contacts Snap"], phoneResult: 'settingsGeoOnly', phoneResultLabel: '📱 Localisation seule activée' },
+    ] },
+  { month: "Janvier", title: "Questions intimes",
+    text: "Tu te poses plein de questions sur ton corps qui change, sur les relations, des choses dont tu n'oses pas parler à voix haute. Tu veux des réponses. Tu prends ton téléphone.",
+    dilemma: "Comment tu cherches ?", phoneInitial: 'googleHistory', phoneLabel: '📱 Tu vas faire une recherche',
+    choices: [
+      { letter: 'A', text: "Je tape mes questions sur Google, c'est le plus rapide.", impact: { privacy: -25, reputation: 0, wellbeing: -10, algo: 30 },
+        consequence: "Google enregistre toutes tes recherches dans ton compte. Pendant des semaines, des pubs liées vont apparaître partout, même quand tu prêtes ton tél à un copain. Ton historique reste.",
+        traces: ["Historique conservé dans ton compte Google", "Profil publicitaire mis à jour", "YouTube te recommandera des contenus liés"], phoneResult: 'googleHistory', phoneResultLabel: '📱 Tes recherches sont enregistrées' },
+      { letter: 'B', text: "J'utilise le mode navigation privée.", impact: { privacy: 5, reputation: 0, wellbeing: 5, algo: 5 },
+        consequence: "Bonne intuition, mais le mode privé empêche le stockage local, alors que ton fournisseur d'accès (Salt, Swisscom) et les sites visités voient quand même tout. « Privé » est un mot trompeur.",
+        traces: ["Recherches non sauvegardées en local", "Mais traces côté fournisseur d'accès et site"], phoneResult: 'googleIncognito', phoneResultLabel: '📱 Mode privé (pas si privé)' },
+      { letter: 'C', text: "Je préfère en parler à un.e cousin.e ou ami.e de confiance.", impact: { privacy: 15, reputation: 5, wellbeing: 15, algo: 0 },
+        consequence: "Le choix le plus sain. Aucune trace numérique, et tu obtiens des réponses humaines adaptées à toi. Pour les questions intimes, le canal humain reste imbattable. Le 147 de Pro Juventute existe aussi : gratuit, anonyme.",
+        traces: ["Aucune trace numérique"], phoneResult: 'phoneAside', phoneResultLabel: '📱 Tu poses ton téléphone' },
+    ] },
+  { month: "Février", title: "Le DM bizarre",
+    text: "Quelqu'un que tu ne connais pas t'envoie un message privé sur Instagram : <em>« Salut, on s'est croisés à la fête de Maya, t'as un super style ! »</em> Le compte a 3 mois, peu d'abonnés, photos floues.",
+    dilemma: "Tu fais quoi ?", phoneInitial: 'igDMSuspicious', phoneLabel: '📱 Un message privé arrive',
+    choices: [
+      { letter: 'A', text: "Je réponds, je trouve ça flatteur. On commence à discuter.", impact: { privacy: -20, reputation: -10, wellbeing: -15, algo: 5 },
+        consequence: "L'inconnu cherche à savoir où tu habites, où tu vas à l'école. Près d'une fille sur deux en Suisse déclare avoir reçu des sollicitations en ligne (JAMES 2024). Les comptes récents sans visage sont un signal d'alarme. Si quelqu'un te met mal à l'aise, parles-en à un adulte ou au 147.",
+        traces: ["Conversation archivée par Meta", "Tes infos personnelles potentiellement collectées"], phoneResult: 'igDMSuspicious', phoneResultLabel: '📱 La conversation continue...' },
+      { letter: 'B', text: "Je bloque et je signale le compte.", impact: { privacy: 15, reputation: 5, wellbeing: 10, algo: 0 },
+        consequence: "La bonne décision. Tu n'as aucune obligation de répondre à un inconnu. Le bouton signaler sert exactement à ça, et ça protège aussi d'autres jeunes.",
+        traces: ["Signalement envoyé, compte examiné par Meta"], phoneResult: 'igDMBlocked', phoneResultLabel: '📱 Compte bloqué et signalé' },
+      { letter: 'C', text: "J'ignore mais je ne bloque pas, au cas où.", impact: { privacy: 0, reputation: 0, wellbeing: -5, algo: 0 },
+        consequence: "Demi-mesure compréhensible. Mais si la personne insiste, tu vas vivre dans le doute. Mieux vaut trancher. Tu peux demander discrètement à Maya qui était à sa fête.",
+        traces: ["Message vu sans réponse, l'inconnu peut réessayer"], phoneResult: 'igDMSuspicious', phoneResultLabel: '📱 Message laissé en attente' },
+    ] },
+  { month: "Mars", title: "La vidéo virale",
+    text: "Une vidéo où tu danses bizarrement en cours fait le tour de TikTok. <strong>50 000 vues en 2 jours.</strong> Les commentaires se partagent entre rigolos et carrément méchants. Certains te tagguent dans d'autres comptes.",
+    dilemma: "Comment réagis-tu ?", phoneInitial: 'tiktokViral', phoneLabel: '📱 Ta vidéo explose sur TikTok',
+    choices: [
+      { letter: 'A', text: "Je supprime la vidéo de mon compte.", impact: { privacy: 5, reputation: 5, wellbeing: 5, algo: 0 },
+        consequence: "Tu supprimes de TON compte, mais la vidéo a déjà été dupliquée et reposted par d'autres comptes. C'est la réplicabilité (boyd, 2016). Tu peux limiter mais pas tout arrêter.",
+        traces: ["Vidéo originale supprimée", "Environ 12 copies actives sur d'autres comptes"], phoneResult: 'tiktokDeleted', phoneResultLabel: '📱 Supprimée... mais pas partout' },
+      { letter: 'B', text: "Je surfe la vague, je fais des stories « vous m'avez vu ? »", impact: { privacy: -15, reputation: 10, wellbeing: -5, algo: 20 },
+        consequence: "Tu transformes la gêne en attention. Plus de followers, mais la vidéo restera attachée à ton nom pour longtemps. Quand tu chercheras un job dans 5 ans, elle ressortira en premier.",
+        traces: ["Profil viralisé, audience démultipliée", "Algorithme t'enferme dans une bulle performative"], phoneResult: 'tiktokViral', phoneResultLabel: '📱 Tu surfes la vague virale' },
+      { letter: 'C', text: "Je signale et je demande le retrait (droit à l'effacement).", impact: { privacy: 10, reputation: 0, wellbeing: 10, algo: -5 },
+        consequence: "Tu utilises tes droits. En tant que personne identifiable, tu peux demander le retrait. TikTok doit examiner ta demande (RGPD, nLPD). 69 % des élèves ignorent qu'ils ont ce droit. Toi tu l'utilises.",
+        traces: ["Demande officielle de suppression enregistrée", "Vidéo originale retirée sous 48h"], phoneResult: 'tiktokTakedown', phoneResultLabel: '📱 Demande de retrait envoyée' },
+    ] },
+  { month: "Avril", title: "Le faux compte",
+    text: "Tu apprends qu'un faux compte avec ta photo et ton nom a été créé. <strong>Quelqu'un insulte tes camarades en se faisant passer pour toi.</strong> Plusieurs personnes te bloquent sans savoir que ce n'est pas toi. Le doyen veut te voir.",
+    dilemma: "Que fais-tu ?", phoneInitial: 'fakeAccount', phoneLabel: '📱 Un faux compte usurpe ton identité',
+    choices: [
+      { letter: 'A', text: "Je signale à Insta, je préviens mes amis, et j'en parle à mes parents et au doyen.", impact: { privacy: 15, reputation: 20, wellbeing: 10, algo: 0 },
+        consequence: "Excellente réaction. L'usurpation d'identité est interdite par la loi suisse. En signalant vite, tu protèges tes amis et toi-même. Tes parents et le doyen décident des suites ensemble. Tu n'es pas obligé de tout gérer seul.",
+        traces: ["Signalement Instagram envoyé", "École et parents informés, démarche encadrée"], phoneResult: 'fakeAccountReported', phoneResultLabel: '📱 Faux compte signalé et géré' },
+      { letter: 'B', text: "Je publie une story pour dire que c'est pas moi.", impact: { privacy: -5, reputation: 0, wellbeing: -10, algo: 0 },
+        consequence: "Tu te défends, mais sans signaler le faux compte, il continue d'exister et de poster. C'est un premier pas, mais il manque le signalement et l'aide d'un adulte.",
+        traces: ["Story enregistrée", "Faux compte toujours actif"], phoneResult: 'fakeAccount', phoneResultLabel: '📱 Le faux compte existe toujours' },
+      { letter: 'C', text: "Je ne réagis pas, j'espère que ça passe tout seul.", impact: { privacy: -10, reputation: -25, wellbeing: -20, algo: 0 },
+        consequence: "Le faux compte continue de poster en ton nom. Tes camarades, leurs parents, tes profs pensent que c'est toi. Les dégâts s'accumulent.",
+        traces: ["Tu es associé à des propos que tu n'as pas tenus", "Cette association reste dans les mémoires"], phoneResult: 'fakeAccount', phoneResultLabel: '📱 Les dégâts s\'accumulent' },
+    ] },
+  { month: "Mai", title: "La photo qui menace",
+    text: "Il y a quelques mois, en confiance, tu avais envoyé une photo personnelle de toi à quelqu'un que tu pensais proche. Aujourd'hui, cette personne s'en sert contre toi : <strong>« Si tu fais pas ce que je dis, je l'envoie à toute la classe. »</strong>",
+    dilemma: "Comment tu agis ?", phoneInitial: 'secretBlackmail', phoneLabel: '📱 Un message de menace arrive',
+    choices: [
+      { letter: 'A', text: "J'en parle tout de suite à un adulte de confiance (parent, prof, doyen) ou j'appelle le 147.", impact: { privacy: 15, reputation: 5, wellbeing: 15, algo: 0 },
+        consequence: "La meilleure réaction, et la plus courageuse. Diffuser une image intime de quelqu'un sans son accord est interdit par la loi suisse. Ce n'est jamais ta faute, et tu n'as pas à gérer ça seul. Un adulte peut faire cesser la menace et te protéger. Le 147 de Pro Juventute est gratuit, anonyme et fait exactement pour ces situations.",
+        traces: ["La menace est documentée et prise en charge", "Tu reprends le contrôle, accompagné"], phoneResult: 'blackmailResolved', phoneResultLabel: '📱 Tu demandes de l\'aide' },
+      { letter: 'B', text: "Je cède à la demande, j'ai trop peur que la photo soit envoyée.", impact: { privacy: -20, reputation: -10, wellbeing: -25, algo: 0 },
+        consequence: "C'est compréhensible d'avoir peur, mais céder donne encore plus de pouvoir à la personne, et le chantage ne s'arrête presque jamais après une première fois. Personne n'a le droit de te menacer avec une image. Tu peux briser ce silence : parles-en à un adulte ou au 147.",
+        traces: ["La personne se sent toute-puissante", "La menace risque de revenir"], phoneResult: 'secretBlackmail', phoneResultLabel: '📱 La menace continue' },
+      { letter: 'C', text: "Je l'ignore et j'espère que ça passera tout seul.", impact: { privacy: -10, reputation: -10, wellbeing: -20, algo: 0 },
+        consequence: "Ignorer ne fait pas disparaître la menace, et tu restes seul avec ton angoisse. Ce genre de situation se règle bien mieux avec l'aide d'un adulte. Le 147 de Pro Juventute existe précisément pour ça : gratuit, confidentiel, 24h/24.",
+        traces: ["La menace reste suspendue", "Le stress s'accumule"], phoneResult: 'secretBlackmail', phoneResultLabel: '📱 La menace reste suspendue' },
+    ] },
+  { month: "Juin", title: "Les corrigés sur Discord",
+    text: "Quelqu'un partage les corrigés de l'examen de maths de demain sur un serveur Discord. <strong>Plusieurs centaines d'élèves sont déjà dedans.</strong> Tu vois passer les photos des corrigés. Ton prof est strict.",
+    dilemma: "Que choisis-tu ?", phoneInitial: 'discordExams', phoneLabel: '📱 Le serveur Discord de triche',
+    choices: [
+      { letter: 'A', text: "Je télécharge et je révise avec.", impact: { privacy: -20, reputation: -20, wellbeing: -15, algo: 5 },
+        consequence: "Tu auras peut-être une bonne note, mais Discord garde une trace de chaque téléchargement, lié à ton compte, lui-même lié à ton mail. Avec 300 élèves, l'école va enquêter et ton compte peut être identifié.",
+        traces: ["Téléchargement horodaté lié à ton compte Discord", "Adresse IP enregistrée"], phoneResult: 'discordExams', phoneResultLabel: '📱 Ton téléchargement est tracé' },
+      { letter: 'B', text: "Je quitte le serveur. Je préviens un prof de confiance, sans donner de noms.", impact: { privacy: 15, reputation: 20, wellbeing: 15, algo: 0 },
+        consequence: "Acte courageux. Tu protèges la valeur de tes propres résultats et tu permets à l'école d'agir avant que ça dégénère. Tu n'as pas à balancer des noms, juste à signaler la situation.",
+        traces: ["Sortie du serveur enregistrée", "Aucun téléchargement à ton nom"], phoneResult: 'discordLeft', phoneResultLabel: '📱 Tu as quitté et alerté' },
+      { letter: 'C', text: "Je quitte le serveur mais je ne dis rien.", impact: { privacy: 10, reputation: 0, wellbeing: 0, algo: 0 },
+        consequence: "Tu te retires sans tricher, c'est déjà bien. Mais le serveur continue et d'autres seront tentés. Parfois, signaler un problème (sans dénoncer des personnes) protège plus de monde.",
+        traces: ["Sortie du serveur enregistrée"], phoneResult: 'discordLeft', phoneResultLabel: '📱 Tu quittes discrètement' },
+    ] },
+  { month: "Juillet", title: "Les vacances",
+    text: "Tu pars 3 semaines en vacances en famille. Tu pourrais documenter chaque journée en stories Instagram et Snap. Tes amis adorent voir, et tu as déjà mille belles photos.",
+    dilemma: "Comment partages-tu ?", phoneInitial: 'snapMapsVacation', phoneLabel: '📱 Snap Maps pendant tes vacances',
+    choices: [
+      { letter: 'A', text: "Stories en direct tous les jours avec géolocalisation.", impact: { privacy: -25, reputation: 0, wellbeing: -5, algo: 15 },
+        consequence: "Tu partages en direct = tout le monde sait que tu n'es pas à la maison pendant 3 semaines. C'est une info précieuse pour des personnes mal intentionnées. Ta routine de vacances est cartographiée.",
+        traces: ["Localisation en temps réel sur Snap Maps", "Itinéraire complet cartographié", "Statut « absent de chez moi » public 3 semaines"], phoneResult: 'snapMapsVacation', phoneResultLabel: '📱 Ta position en direct, vue par tous' },
+      { letter: 'B', text: "Je prends plein de photos mais je les poste après mon retour.", impact: { privacy: 15, reputation: 5, wellbeing: 10, algo: 5 },
+        consequence: "Très bon réflexe. Tu profites de tes vacances sans donner ta position en direct, et tu peux trier ce que tu montres une fois rentré, à tête reposée.",
+        traces: ["Photos sauvegardées localement, publication différée"], phoneResult: 'snapMapsDelayed', phoneResultLabel: '📱 Photos gardées pour plus tard' },
+      { letter: 'C', text: "Je ne publie rien du tout, je profite juste.", impact: { privacy: 20, reputation: -5, wellbeing: 15, algo: -5 },
+        consequence: "Décision rare et puissante. Pas d'algorithme à nourrir, pas de pression, pas de comparaison. Tu remarques que tu profites plus du moment quand tu ne penses pas à le poster.",
+        traces: ["Aucune trace numérique de tes vacances"], phoneResult: 'snapMapsOff', phoneResultLabel: '📱 Localisation coupée — déconnexion' },
+    ] },
+  { month: "Août", title: "La postulation",
+    text: "Fin août. Tu candidate pour un stage d'été. <strong>Sarah Duparc, des ressources humaines, ouvre ton CV. Elle a 3 minutes. Avant de t'appeler, elle tape ton nom sur Google.</strong>",
+    dilemma: "As-tu vérifié toi-même ce qui ressort de toi sur Internet avant de postuler ?", phoneInitial: 'finalGooglePreview', phoneLabel: '📱 La recruteuse va te googler',
+    choices: [
+      { letter: 'A', text: "Oui, j'ai googlé mon nom plusieurs fois cette année, j'ai nettoyé ce qui me dérangeait.", impact: { privacy: 10, reputation: 15, wellbeing: 10, algo: 0 },
+        consequence: "Tu as utilisé le droit à l'effacement et géré ton e-réputation de façon proactive. C'est ce que recommandent les spécialistes, et ce que 69 % des élèves ne savent pas faire.",
+        traces: ["Profil numérique nettoyé et maîtrisé"], phoneResult: 'finalGoogleClean', phoneResultLabel: '📱 Ton profil Google est propre' },
+      { letter: 'B', text: "Non, je n'ai jamais vraiment regardé ce qui ressort sur moi.", impact: { privacy: -10, reputation: -10, wellbeing: -10, algo: 0 },
+        consequence: "Tu vas découvrir en même temps que la recruteuse ce qu'Internet raconte sur toi. Beaucoup de choses te seront peut-être étrangères : commentaires anciens, photos d'amis, vieux post oublié...",
+        traces: ["Profil numérique non maîtrisé"], phoneResult: 'finalGoogleResult', phoneResultLabel: '📱 Voici ce que Google montre de toi' },
+    ] },
+];
+let state = { avatarName: '', avatarStyle: 0, currentChapter: 0, privacy: 75, reputation: 50, wellbeing: 70, algo: 10, choices: [] };
+
+function initAvatarPicker() {
+  const grid = document.getElementById('style-grid');
+  grid.innerHTML = avatarStyles.map((style, i) => `<div class="style-option ${i===0?'selected':''}" data-idx="${i}" style="background:${style.bg};">${style.svg}</div>`).join('');
+  grid.querySelectorAll('.style-option').forEach(opt => {
+    opt.addEventListener('click', () => {
+      grid.querySelectorAll('.style-option').forEach(o => o.classList.remove('selected'));
+      opt.classList.add('selected');
+      state.avatarStyle = parseInt(opt.dataset.idx);
+      checkStartButton();
+    });
+  });
+  document.getElementById('avatar-name').addEventListener('input', e => { state.avatarName = e.target.value.trim(); checkStartButton(); });
+}
+function checkStartButton() { document.getElementById('start-game').disabled = !state.avatarName; }
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0, 0);
+}
+function goToAvatar() { showScreen('avatar'); initAvatarPicker(); }
+function goToTeacher() { showScreen('teacher'); renderTeacherDashboard(); }
+
+function startGame() {
+  showScreen('game');
+  document.getElementById('header-avatar').innerHTML = avatarStyles[state.avatarStyle].svg;
+  document.getElementById('header-avatar').style.background = avatarStyles[state.avatarStyle].bg;
+  document.getElementById('header-name').textContent = state.avatarName;
+  renderProgress();
+  renderChapter();
+}
+
+function renderProgress() {
+  document.getElementById('progress').innerHTML = chapters.map((_, i) => `<div class="progress-dot ${i<state.currentChapter?'done':i===state.currentChapter?'active':''}"></div>`).join('');
+}
+
+// Render the phone with a given app template
+function renderPhone(appKey, label) {
+  const content = document.getElementById('phone-content');
+  const labelEl = document.getElementById('phone-label');
+  let html = '';
+  if (appKey === 'finalGooglePreview') {
+    html = `<div class="ggl-app"><div class="ggl-search-bar"><div class="ggl-logo"><span class="b">G</span><span class="o1">o</span><span class="o2">o</span><span class="g">g</span><span class="l">l</span><span class="e">e</span></div><div class="ggl-search-input"><span>🔍</span><span>${state.avatarName} <span style="animation: blink 1s infinite;">▍</span></span></div></div><div style="padding:40px 20px; text-align:center; color:#999; font-size:12px;">Recherche en cours...</div></div>`;
+  } else if (appKey === 'finalGoogleResult') {
+    const results = buildSearchResults();
+    html = phoneApps.finalGoogle(state.avatarName, results);
+  } else if (appKey === 'finalGoogleClean') {
+    html = phoneApps.finalGoogleClean(state.avatarName);
+  } else if (phoneApps[appKey]) {
+    html = phoneApps[appKey](state.avatarName, state.avatarStyle);
+  }
+  content.classList.remove('flash');
+  void content.offsetWidth;
+  content.classList.add('flash');
+  content.innerHTML = html;
+  if (label) labelEl.textContent = label;
+}
+
+function renderChapter() {
+  const ch = chapters[state.currentChapter];
+  document.getElementById('header-month').textContent = `${ch.month} · 14 ans`;
+  document.getElementById('chapter-month-label').textContent = `Mois ${String(state.currentChapter+1).padStart(2,'0')} · ${ch.month}`;
+  document.getElementById('chapter-title').textContent = ch.title;
+  document.getElementById('chapter-text').innerHTML = ch.text;
+  document.getElementById('chapter-dilemma').textContent = ch.dilemma;
+  document.getElementById('chapter-choices').innerHTML = ch.choices.map((c, i) => `<button class="choice" onclick="pickChoice(${i})"><div class="choice-letter">${c.letter}</div><div>${c.text}</div></button>`).join('');
+  document.getElementById('consequence').classList.remove('show');
+  // Phone initial state
+  renderPhone(ch.phoneInitial, ch.phoneLabel);
+}
+
+function pickChoice(idx) {
+  const ch = chapters[state.currentChapter];
+  const choice = ch.choices[idx];
+  document.querySelectorAll('.choice').forEach((el, i) => { el.disabled = true; if (i===idx) el.classList.add('picked'); });
+  state.privacy = clamp(state.privacy + choice.impact.privacy);
+  state.reputation = clamp(state.reputation + choice.impact.reputation);
+  state.wellbeing = clamp(state.wellbeing + choice.impact.wellbeing);
+  state.algo = clamp(state.algo + choice.impact.algo);
+  state.choices.push({ chapter: state.currentChapter, choice: idx });
+  updateStats();
+
+  // ANIMATE THE PHONE to show the result of the choice
+  setTimeout(() => { renderPhone(choice.phoneResult, choice.phoneResultLabel); }, 300);
+
+  document.getElementById('conseq-text').innerHTML = choice.consequence;
+  document.getElementById('conseq-traces-list').innerHTML = choice.traces.map(t => `<li>${t}</li>`).join('');
+  document.getElementById('conseq-impacts').innerHTML = buildImpactPills(choice.impact);
+  setTimeout(() => {
+    document.getElementById('consequence').classList.add('show');
+    document.getElementById('consequence').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, 500);
+}
+
+function buildImpactPills(impact) {
+  const labels = { privacy: '🛡️ Vie privée', reputation: '⭐ Réputation', wellbeing: '💚 Bien-être', algo: '🤖 Profil algo' };
+  return Object.entries(impact).filter(([k,v]) => v!==0).map(([k,v]) => {
+    const sign = v>0?'+':''; const cls = v>0?'up':'down';
+    const realCls = k==='algo' ? (v>0?'down':'up') : cls;
+    return `<span class="impact-pill ${realCls}">${labels[k]} ${sign}${v}</span>`;
+  }).join('');
+}
+function clamp(v) { return Math.max(0, Math.min(100, v)); }
+function updateStats() {
+  ['privacy','reputation','wellbeing','algo'].forEach(k => {
+    document.getElementById(`num-${k}`).textContent = state[k];
+    document.getElementById(`bar-${k}`).style.width = state[k] + '%';
+  });
+}
+
+function nextChapter() {
+  state.currentChapter++;
+  if (state.currentChapter >= chapters.length) { showReveal(); return; }
+  renderProgress();
+  renderChapter();
+}
+
+function buildSearchResults() {
+  const name = state.avatarName;
+  const choices = state.choices.map(c => c.choice);
+  const results = [];
+  if (choices[0] === 0) results.push({ url: `instagram.com › ${name.toLowerCase()}`, title: `${name} (@${name.toLowerCase()}.real) · Instagram`, snippet: `Profil public · Cycle d'orientation · <em>${name}</em>...` });
+  if (choices[1] === 0) results.push({ url: 'snapchat.com › stories', title: `Soirée chez Maya · ${name}`, snippet: `Story archivée · <em>${name}</em> visible dans plusieurs photos...` });
+  if (choices[2] === 2) results.push({ url: 'tribune-de-geneve.ch › faits-divers', title: `Cyberharcèlement dans un CO genevois`, snippet: `...groupe WhatsApp impliquant plusieurs élèves dont <em>${name}</em>...` });
+  if (choices[6] === 1) results.push({ url: `tiktok.com › @${name.toLowerCase()}`, title: `${name} · TikTok · 50K vues`, snippet: `"Quand t'oublies que t'es en cours" · 247 commentaires...` });
+  else if (choices[6] === 0) results.push({ url: 'tiktok-archive.org', title: `Archive vidéo · École Genève`, snippet: `Reposted par 12 comptes · <em>${name}</em> identifiable...` });
+  if (choices[7] === 2) results.push({ url: `instagram.com › fake`, title: `${name}.fake · compte suspect`, snippet: `Photos de <em>${name}</em> · commentaires problématiques...` });
+  if (choices[10] === 0) results.push({ url: `snapchat.com › maps`, title: `Snap Maps · ${name}`, snippet: `Trajets école-maison, vacances · <em>${name}</em>...` });
+  if (results.length < 2) results.push({ url: 'linkedin.com › in › ' + name.toLowerCase(), title: `${name} · Étudiant·e au CO`, snippet: `Profil · Recherche stage...` });
+  return results;
+}
+
+function showReveal() {
+  showScreen('reveal');
+  const name = state.avatarName;
+  document.getElementById('search-query').textContent = name + ' Genève';
+  const results = buildSearchResults();
+  const avg = (state.privacy + state.reputation + state.wellbeing + (100 - state.algo)) / 4;
+  let finalResults = results;
+  if (avg >= 75 && results.length <= 2) {
+    finalResults = [{ url: `linkedin.com › in › ${name.toLowerCase()}`, title: `${name} · LinkedIn`, snippet: `Profil bien tenu, parcours clair, communication soignée. Aucun élément problématique.` }];
+  }
+  document.getElementById('search-meta').textContent = `Environ ${finalResults.length * 100 + Math.floor(Math.random()*500)} résultats (0,42 s)`;
+  document.getElementById('search-results').innerHTML = finalResults.map(r => `<div class="search-result"><div class="search-result-url">${r.url}</div><div class="search-result-title">${r.title}</div><div class="search-result-snippet">${r.snippet}</div></div>`).join('');
+
+  let msg;
+  if (avg >= 70) msg = `Bonjour ${name},<br><br>Merci pour votre candidature. J'ai regardé votre dossier ET ce qui ressort de vous en ligne. <strong>Votre présence numérique est cohérente et construite.</strong> C'est exactement ce qu'on attend aujourd'hui.<br><br>Je vous propose un entretien la semaine prochaine.`;
+  else if (avg >= 45) msg = `Bonjour ${name},<br><br>Merci pour votre candidature. <strong>Quelques éléments en ligne m'interpellent</strong> (publications, commentaires anciens). Cela ne disqualifie pas, mais soulève des questions.<br><br>Pouvez-vous m'expliquer le contexte lors d'un entretien ?`;
+  else msg = `Bonjour ${name},<br><br>Merci pour votre candidature. <strong>Après vérification, je ne donnerai pas suite.</strong> Plusieurs éléments en ligne ne correspondent pas à l'image de notre entreprise.<br><br>Je vous encourage à nettoyer votre présence numérique : le droit à l'effacement existe (RGPD, nLPD).`;
+  document.getElementById('recruiter-text').innerHTML = msg;
+
+  const stats = [
+    { icon: '🛡️', label: 'Vie privée', value: state.privacy, color: '#4ECDC4' },
+    { icon: '⭐', label: 'E-réputation', value: state.reputation, color: '#A78BFA' },
+    { icon: '💚', label: 'Bien-être', value: state.wellbeing, color: '#95D5B2' },
+    { icon: '🤖', label: 'Profilage algo', value: state.algo, color: '#FF6B6B', invert: true },
+  ];
+  document.getElementById('final-stats').innerHTML = stats.map(s => `<div class="final-stat"><div class="final-stat-icon">${s.icon}</div><div class="final-stat-value" style="color:${s.color};">${s.value}<span style="font-size:18px; color:var(--ink-muted);">/100</span></div><div class="final-stat-label">${s.label}</div>${s.invert?'<div class="mono" style="font-size:10px; color:var(--ink-muted); margin-top:4px;">(moins = mieux)</div>':''}</div>`).join('');
+}
+
+function restart() {
+  state = { avatarName: '', avatarStyle: 0, currentChapter: 0, privacy: 75, reputation: 50, wellbeing: 70, algo: 10, choices: [] };
+  showScreen('landing');
+}
+
+function renderTeacherDashboard() {
+  const fakeStudents = [
+    { pseudo: 'Aigle72', privacy: 82, reputation: 68, wellbeing: 75, algo: 22 },{ pseudo: 'Bambou41', privacy: 75, reputation: 58, wellbeing: 70, algo: 35 },{ pseudo: 'Cactus08', privacy: 45, reputation: 42, wellbeing: 60, algo: 68 },{ pseudo: 'Dauphin33', privacy: 90, reputation: 75, wellbeing: 80, algo: 18 },{ pseudo: 'Étoile15', privacy: 62, reputation: 50, wellbeing: 55, algo: 48 },{ pseudo: 'Faucon27', privacy: 38, reputation: 30, wellbeing: 45, algo: 78 },{ pseudo: 'Glacier09', privacy: 70, reputation: 65, wellbeing: 68, algo: 42 },{ pseudo: 'Hibou14', privacy: 85, reputation: 72, wellbeing: 78, algo: 25 },{ pseudo: 'Iris22', privacy: 55, reputation: 48, wellbeing: 60, algo: 55 },{ pseudo: 'Jaguar06', privacy: 72, reputation: 60, wellbeing: 65, algo: 38 },{ pseudo: 'Koala51', privacy: 48, reputation: 38, wellbeing: 52, algo: 65 },{ pseudo: 'Lynx30', privacy: 78, reputation: 70, wellbeing: 72, algo: 30 },{ pseudo: 'Mésange17', privacy: 65, reputation: 55, wellbeing: 62, algo: 45 },{ pseudo: 'Nuage44', privacy: 88, reputation: 78, wellbeing: 82, algo: 20 },{ pseudo: 'Ocre02', privacy: 42, reputation: 35, wellbeing: 48, algo: 72 },{ pseudo: 'Pivoine19', privacy: 68, reputation: 58, wellbeing: 65, algo: 40 },{ pseudo: 'Quartz77', privacy: 58, reputation: 45, wellbeing: 55, algo: 58 },{ pseudo: 'Renard12', privacy: 75, reputation: 68, wellbeing: 70, algo: 32 },{ pseudo: 'Saturne88', privacy: 50, reputation: 42, wellbeing: 52, algo: 62 },{ pseudo: 'Tulipe03', privacy: 82, reputation: 75, wellbeing: 78, algo: 25 },{ pseudo: 'Ursa55', privacy: 60, reputation: 52, wellbeing: 58, algo: 50 },{ pseudo: 'Volcan21', privacy: 70, reputation: 62, wellbeing: 68, algo: 38 },
+  ];
+  const scoreClass = (v, invert=false) => { const norm = invert?100-v:v; if (norm>=70) return 'score-high'; if (norm>=45) return 'score-mid'; return 'score-low'; };
+  document.getElementById('student-rows').innerHTML = fakeStudents.map((s, i) => `<div class="student-row"><span class="mono" style="color:var(--ink-muted); font-size:11px;">#${(i+1).toString().padStart(2,'0')}</span><span class="student-pseudo">${s.pseudo}</span><span class="student-score ${scoreClass(s.privacy)}">${s.privacy}</span><span class="student-score ${scoreClass(s.reputation)}">${s.reputation}</span><span class="student-score ${scoreClass(s.wellbeing)}">${s.wellbeing}</span><span class="student-score ${scoreClass(s.algo,true)}">${s.algo}</span></div>`).join('');
+}
+</script>
+</body>
+</html>
